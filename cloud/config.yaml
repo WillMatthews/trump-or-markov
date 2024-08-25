@@ -1,6 +1,5 @@
 app:
   name: "Trump Or Markov Chain?"
-  version: "0.0.1" # TODO get from git tag
 
 server:
   host: "127.0.0.1"
@@ -12,4 +11,4 @@ dataset:
 
 database:
   # SQLite config
-  sqlite:
+  sqlite: "sqlite:///../data/database.db"
