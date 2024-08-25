@@ -40,15 +40,16 @@ func JSONLogMiddleware() gin.HandlerFunc {
 		c.Next()
 
 		// Stop timer
-		duration := util.GetDurationInMillseconds(start)
+		duration := GetDurationInMillseconds(start)
 
+		log.with
 		entry := log.WithFields(log.Fields{
-			"client_ip":  util.GetClientIP(c),
+			"client_ip":  GetClientIP(c),
 			"duration":   duration,
 			"method":     c.Request.Method,
 			"path":       c.Request.RequestURI,
 			"status":     c.Writer.Status(),
-			"user_id":    util.GetUserID(c),
+			"user_id":    GetUserID(c),
 			"referrer":   c.Request.Referer(),
 			"request_id": c.Writer.Header().Get("Request-Id"),
 			// "api_version": util.ApiVersion,
@@ -61,8 +62,6 @@ func JSONLogMiddleware() gin.HandlerFunc {
 		}
 	}
 }
-
-
 
 // UseJSONLogFormat sets up the JSON log formatter
 func UseJSONLogFormat() {
