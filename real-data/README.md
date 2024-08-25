@@ -3,7 +3,6 @@
 This README details how to access the real data used in this project (which is required to train the model,
 and therefore run the backend).
 
-
 ## Datasets
 
 ### Trump Tweets
@@ -12,8 +11,6 @@ I used the Trump Archive dataset, which contains a mixture of Truth social and T
 The dataset can be found [here](https://www.thetrumparchive.com/).
 
 Their website conveniently provides a JSON dataset of all the tweets, which can be downloaded [here](https://drive.google.com/file/d/16wm-2NTKohhcA26w-kaWfhLIGwl_oX95/view).
-
-
 
 ```bash
 cat tweets_01-08-2021.json | jq | grep "thin person drinking Diet Coke" -B 2 -A 8

@@ -1,0 +1,29 @@
+name: Potty Mouth
+
+on:
+  issue_comment:
+    types: [created, edited]
+  issues:
+    types: [opened, edited, reopened]
+  pull_request:
+    types: [opened, edited, reopened]
+
+# Required permissions
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  swear-jar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Naughty word check
+        # Conditionally run the step if the actor isn't a bot
+        if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]' }}
+        uses: IEvangelist/profanity-filter@main
+        id: profanity-filter
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # See https://bit.ly/potty-mouth-replacement-strategies
+          replacement-strategy: middle-swear-emoji # See Replacement strategy
