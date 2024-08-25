@@ -7,6 +7,7 @@
 I have a guilty admission.
 In this age of Large Language models, reasoning, generative AI, and all other marketing buzzwords, sometimes it's nice to take a step back.
 I quite enjoy looking back at the simpler times, when the humble Markov Chain was the go-to tool for generating text.
+They *really* get me going - phwoar! 😍 I feel filthy just thinking about state transitions.
 
 Markov chains, for those who aren't in the know, are a very simple way of generating text - they're a type of stochastic model that describes a sequence of possible events in which the probability of each event depends only on the state attained in the previous event.
 Cor - that's a mouthful, isn't it?
@@ -36,6 +37,7 @@ This will be done on a webpage where you can see your score and compare it with 
 
 ## Cloud Services
 I've been using [air](https://github.com/air-verse/air) to develop this project.
+To run air, after installing it (`go get -u github.com/cosmtrek/air`), you can run the following command in the `cloud` directory:
 ```bash
 cd cloud
 air
@@ -43,6 +45,9 @@ air
 
 You can also run the project using `go run ./cmd/main.go` in the `cloud` directory.
 You're somewhat bound to do that as the paths are hardcoded for things like config.
+
+If you've just jumped in and run the project you'll probably hit an error about missing files.
+You will need to download the dataset, please see the README in the `real-data` directory for more information.
 
 From there, you can access the API at `localhost:1776`, it has two endpoints:
 - `/v1/trump` - returns trump tweets (real or generated)
@@ -86,7 +91,6 @@ HTTP/1.1 200 OK
   }
 ]
 ```
-
 
 ### TODO:
 - [ ] Add a `seed` parameter to the `/v1/trump` endpoint to allow for reproducibility.

@@ -3,6 +3,13 @@
 This README details how to access the real data used in this project (which is required to train the model,
 and therefore run the backend).
 
+
+>[!IMPORTANT]
+> You will need to download the dataset to run the project. The dataset is not included in this repository due to its size.
+
+>[!WARNING]
+> If the dataset exists but you still encounter errors, make sure the filename is the same as the one in the config.yaml file in the `cloud` directory.
+
 ## Datasets
 
 ### Trump Tweets
@@ -26,8 +33,6 @@ cat tweets_01-08-2021.json | jq | grep "thin person drinking Diet Coke" -B 2 -A 
     "isFlagged": "f"
   },
 ```
-
-
 
 
 ### Moby Dick
