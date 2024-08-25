@@ -1,5 +1,9 @@
 # Trump or Markov Chain?
 
+[![Build](https://github.com/WillMatthews/trump-or-markov/actions/workflows/build.yml/badge.svg)](https://github.com/WillMatthews/trump-or-markov/actions/workflows/build.yml)
+[![Potty Mouth](https://github.com/WillMatthews/trump-or-markov/actions/workflows/swear.yml/badge.svg)](https://github.com/WillMatthews/trump-or-markov/actions/workflows/swear.yml)
+![version](https://shields.io/github/v/tag/WillMatthews/trump-or-markov?label=version)
+
 I have a guilty admission.
 In this age of Large Language models, reasoning, generative AI, and all other marketing buzzwords, sometimes it's nice to take a step back.
 I quite enjoy looking back at the simpler times, when the humble Markov Chain was the go-to tool for generating text.
