@@ -35,7 +35,16 @@ This will be done on a webpage where you can see your score and compare it with 
 # Running the Project
 
 ## Cloud Services
-I have written an API that has the following endpoints:
+I've been using [air](https://github.com/air-verse/air) to develop this project.
+```bash
+cd cloud
+air
+```
+
+You can also run the project using `go run ./cmd/main.go` in the `cloud` directory.
+You're somewhat bound to do that as the paths are hardcoded for things like config.
+
+From there, you can access the API at `localhost:1776`, it has two endpoints:
 - `/v1/trump` - returns trump tweets (real or generated)
 - `/v1/health` - returns a ping response to check the service is up
 
@@ -46,6 +55,37 @@ I have written an API that has the following endpoints:
 
 The following headers are sent with the response:
 - `X-Version` - gives the version (GH tag) of the project that is running
+
+Example:
+```json
+GET http://localhost:1776/v1/trump?n=2&fake=true&ord=2
+HTTP/1.1 200 OK
+
+[
+  {
+    "id": 1313186529058136000,
+    "text": "\"\"Our country is falling apart,  just like I did.\"\"  That  is not just the beginning of a magazine and it touched on many years are begging me for a vote. Will be if it means a lot",
+    "favorites": 594434,
+    "retweets": 130439,
+    "date": "2020-10-05T18:37:21Z",
+    "device": "Twitter for iPhone",
+    "isRetweet": false,
+    "isDeleted": false,
+    "isFlagged": false
+  },
+  {
+    "id": 733838909805887500,
+    "text": "Thank you, working HARD! #MAGA https://t.co/JGvKANCRqZ",
+    "favorites": 17148,
+    "retweets": 5508,
+    "date": "2016-05-21T01:56:44Z",
+    "device": "Twitter for Android",
+    "isRetweet": false,
+    "isDeleted": false,
+    "isFlagged": false
+  }
+]
+```
 
 
 ### TODO:

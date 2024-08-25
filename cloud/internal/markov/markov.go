@@ -12,7 +12,7 @@ const (
 )
 
 var (
-	stopChars = []byte{'!', '?', '.'}
+	stopChars = []byte{'!', '?', '.'} //  …  (ellipsis is multi-byte, ignore for now)
 )
 
 type Chain struct {
