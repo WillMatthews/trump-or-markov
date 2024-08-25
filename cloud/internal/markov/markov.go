@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	doubleSpaceProb = 0.05
+)
+
 type Chain struct {
 	chain map[string][]string
 	seeds []string
@@ -98,14 +102,14 @@ func (c *Chain) Generate(seed string, length int) string {
 		next := posible[rand.IntN(len(posible))]
 		words.add(next)
 
-		if c.shouldIStop(words) {
+		if c.shouldIStop(words, length) {
 			break
 		}
 	}
-	return words.String()
+	return words.string()
 }
 
-func (c *Chain) shouldIStop(words wordChain) bool {
+func (c *Chain) shouldIStop(words wordChain, stopWordLimit int) bool {
 	next := words[len(words)-1]
 
 	if next[len(next)-1] == '.' {
@@ -114,14 +118,12 @@ func (c *Chain) shouldIStop(words wordChain) bool {
 		}
 	}
 
-	return words.len() > words.len()
+	return words.len() > stopWordLimit
 }
 
 type wordChain []string
 
-func (w wordChain) String() string {
-	doubleSpaceProb := 0.05
-
+func (w wordChain) string() string {
 	sb := strings.Builder{}
 	for i, word := range w {
 		if i == 0 {

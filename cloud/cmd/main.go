@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/WillMatthews/trump-or-markov/internal/config"
-	"github.com/WillMatthews/trump-or-markov/internal/trumptweets"
+	tt "github.com/WillMatthews/trump-or-markov/internal/trumptweets"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,17 +13,16 @@ const (
 )
 
 func initialise(cfg *config.Config) {
-	trumptweets.LoadTrumpTweets(cfg.Dataset)
+	tt.LoadTrumpTweets(cfg.Dataset)
 }
 
 func main() {
 	cfg := config.GetConfig()
 	initialise(cfg)
-
 	r := gin.Default()
 
 	r.GET("/realDTTweet", func(c *gin.Context) {
-		tweet, err := trumptweets.RandomSample()
+		tweet, err := tt.RandomSample()
 		if err != nil {
 			c.JSON(500, gin.H{
 				"error": err.Error(),
@@ -42,7 +41,7 @@ func main() {
 			}
 		}
 
-		tweet, err := trumptweets.RandomFakeSample(ord)
+		tweet, err := tt.RandomFakeSample(ord)
 		if err != nil {
 			c.JSON(500, gin.H{
 				"error": err.Error(),
