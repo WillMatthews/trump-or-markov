@@ -55,5 +55,6 @@ func RandomFakeSample(order int) (*Tweet, error) {
 	}
 
 	baseTweet.Text = chain.GenerateRandom(order, 140)
-	return &baseTweet, nil
+	baseTweet.IsRetweet = strings.Contains(baseTweet.Text, "RT")
+	return baseTweet, nil
 }

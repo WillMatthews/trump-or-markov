@@ -35,7 +35,7 @@ type Config struct {
 	Database Database
 }
 
-func GetConfig() *Config {
+func GetConfig() (*Config, string) {
 	yamlFile, err := os.ReadFile(ConfigPath)
 	if err != nil {
 		panic(err)
@@ -51,5 +51,8 @@ func GetConfig() *Config {
 		panic(err)
 	}
 
-	return &config
+	// todo make this a mustgetenv once I've got docker working
+	version := os.Getenv("TOM_VERSION")
+
+	return &config, version
 }

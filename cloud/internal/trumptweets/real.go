@@ -89,7 +89,7 @@ func storeTweet(tweet *Tweet) error {
 
 // RandomSample returns a random tweet from the dataset
 // TODO: replace with SQLite in future
-func RandomSample() (Tweet, error) {
+func RandomSample() (*Tweet, error) {
 	sample := rand.IntN(len(tweets))
-	return tweets[sample], nil
+	return &tweets[sample], nil
 }

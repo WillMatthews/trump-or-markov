@@ -1,15 +1,14 @@
 package main
 
 import (
-	"strconv"
-
+	"github.com/WillMatthews/trump-or-markov/internal/api"
 	"github.com/WillMatthews/trump-or-markov/internal/config"
 	tt "github.com/WillMatthews/trump-or-markov/internal/trumptweets"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	PORT = "1234"
+	PORT = "1776" // why not, it's very apt. Only really used by FEMA so should be fine.
 )
 
 func initialise(cfg *config.Config) {
@@ -17,44 +16,23 @@ func initialise(cfg *config.Config) {
 }
 
 func main() {
-	cfg := config.GetConfig()
+	cfg, version := config.GetConfig()
 	initialise(cfg)
 	r := gin.Default()
 
-	r.GET("/realDTTweet", func(c *gin.Context) {
-		tweet, err := tt.RandomSample()
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		c.JSON(200, tweet)
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Version", version)
+		c.Next()
 	})
 
-	r.GET("/fakeDTTweet", func(c *gin.Context) {
-		ord := 2
-		if ordQry, ok := c.GetQuery("order"); ok {
-			if parsed, err := strconv.Atoi(ordQry); err == nil {
-				ord = parsed
-			}
-		}
-
-		tweet, err := tt.RandomFakeSample(ord)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		c.JSON(200, tweet)
+	r.GET("/v1/trump", func(c *gin.Context) {
+		api.Trump(c)
 	})
 
-	r.GET("/ping", func(c *gin.Context) {
+	// basic ping/pong health check
+	r.GET("/v1/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message": "pong",
+			"message": "Hell yeah",
 		})
 	})
 

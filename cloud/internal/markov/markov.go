@@ -2,11 +2,17 @@ package markov
 
 import (
 	"math/rand/v2"
+	"slices"
 	"strings"
 )
 
 const (
-	doubleSpaceProb = 0.05
+	doubleSpaceProb      = 0.05
+	haltOnStopProbabilty = 0.1
+)
+
+var (
+	stopChars = []byte{'!', '?', '.'}
 )
 
 type Chain struct {
@@ -21,7 +27,7 @@ func NewMarkovChain(order int) *Chain {
 	return &Chain{
 		chain:                make(map[string][]string),
 		order:                order,
-		stopOnStopProbabilty: 0.6,
+		stopOnStopProbabilty: haltOnStopProbabilty,
 	}
 }
 
@@ -111,8 +117,8 @@ func (c *Chain) Generate(seed string, length int) string {
 
 func (c *Chain) shouldIStop(words wordChain, stopWordLimit int) bool {
 	next := words[len(words)-1]
-
-	if next[len(next)-1] == '.' {
+	endChar := next[len(next)-1]
+	if slices.Contains(stopChars, endChar) {
 		if rand.Float64() < c.stopOnStopProbabilty {
 			return true
 		}

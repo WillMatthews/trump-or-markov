@@ -27,13 +27,33 @@ It's a match made in heaven!
 
 The plan is simple.
 We're going to train a Markov chain on a dataset of Donald Trump's speeches and tweets.
-Then, we're going to generate some text using the Markov chain.
+Then, we're going to generate some text using said Markov chain.
 We're going to mix this generated text with some real Trump quotes, and we're going to see if you can tell the difference.
 You probably won't be able to, because it's all nonsense anyway.
+This will be done on a webpage where you can see your score and compare it with others.
 
-# WE'RE GONNA MAKE THE COMPUTER PAY FOR IT!
+# Running the Project
 
-## Training the Markov Chain
+## Cloud Services
+I have written an API that has the following endpoints:
+- `/v1/trump` - returns trump tweets (real or generated)
+- `/v1/health` - returns a ping response to check the service is up
 
-I used n=2 for the Markov chain, which means that the model looks at the two previous words to predict the next word.
-Information about the training corpus can be found in the `real-data` directory.
+`v1/trump` has the following query parameters:
+- `fake` - if set to `true`, returns generated text. If set to `false`, returns real text. Default is `false`.
+- `n` - the number of tweets to return. Default is 1.
+- `ord` - the order of the Markov chain. Default is 2 (bigrams) but can be 1-4. (higher is more likely to regurgitate real text but is more coherent)
+
+The following headers are sent with the response:
+- `X-Version` - gives the version (GH tag) of the project that is running
+
+
+### TODO:
+- [ ] Add a `seed` parameter to the `/v1/trump` endpoint to allow for reproducibility.
+- [ ] Add a generic `/v1/markov` endpoint that allows for any text to be passed in and a Markov chain to be generated from it.
+- [ ] Add another endpoint that allows for markov chains to be fused together (e.g. Git man pages and the Bible).
+- [ ] Use SQLite to store Markov Chains and Tweets in DB.
+- [ ] Rate limiting and API keys to prevent abuse?
+
+## Frontend
+I haven't got there yet. The API is pretty wicked though.
