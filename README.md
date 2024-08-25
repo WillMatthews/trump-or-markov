@@ -32,4 +32,4 @@ You probably won't be able to, because it's all nonsense anyway.
 ## Training the Markov Chain
 
 I used n=2 for the Markov chain, which means that the model looks at the two previous words to predict the next word.
-The training corpus, all of the tweets, were taken from [here](https://github.com/MarkHershey/CompleteTrumpTweetsArchive).
+Information about the training corpus can be found in the `real-data` directory.

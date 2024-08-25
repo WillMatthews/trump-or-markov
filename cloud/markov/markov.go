@@ -1,4 +1,4 @@
-package trumpormarkov
+package markov
 
 const (
 	beforeOffice = "https://raw.githubusercontent.com/MarkHershey/CompleteTrumpTweetsArchive/master/data/realDonaldTrump_bf_office.csv"

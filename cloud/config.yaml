@@ -1,0 +1,15 @@
+app:
+  name: "Trump Or Markov Chain?"
+  version: "0.0.1" # TODO get from git tag
+
+server:
+  host: "127.0.0.1"
+  port: 8080
+
+dataset:
+  trump: "../real-data/tweets_01-08-2021.json"
+  mobydick: "../real-data/whale.txt"
+
+database:
+  # SQLite config
+  sqlite:

@@ -1,0 +1,6 @@
+# Training Data
+*.json
+*.txt
+
+# Air
+/cloud/tmp
