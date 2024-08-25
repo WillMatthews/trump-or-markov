@@ -21,16 +21,25 @@ func NewMarkovChain(order int) *Chain {
 	}
 }
 
-func (c *Chain) makeKey(words []string) string {
+func (c *Chain) makeKey(words wordChain) string {
 	if len(words) == 0 {
 		panic("makeKey called with no words")
 	}
 
-	key := words[0]
-	if len(words) == 1 {
+	// making words lowercase can help with the chain
+	// there are more possible paths it can take
+	lWords := make([]string, len(words))
+	for i, word := range words {
+		lWords[i] = strings.ToLower(word)
+	}
+
+	key := lWords[0]
+	if len(lWords) == 1 {
 		return key
 	}
-	for _, word := range words[1:c.order] {
+
+	end := min(c.order, len(lWords))
+	for _, word := range lWords[1:end] {
 		key += " " + word
 	}
 	return key
@@ -44,8 +53,9 @@ func (c *Chain) Train(words []string) {
 		c.chain[key] = append(c.chain[key], value)
 	}
 
-	// Add seeds to the Chain
+	// Seeds!
 	c.seeds = append(c.seeds, words[0])
+	// TODO relace with range over int
 	for i := 1; i < c.order+1; i++ {
 		if len(words) <= i {
 			break
@@ -54,6 +64,7 @@ func (c *Chain) Train(words []string) {
 		addEntry(key, words[i])
 	}
 
+	// TODO relace with range over int
 	for i := 0; i < len(words)-c.order; i++ {
 		key := c.makeKey(words[i : i+c.order])
 

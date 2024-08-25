@@ -82,12 +82,14 @@ func parseStream(decoder *jstream.Decoder) error {
 }
 
 // TODO replace with SQLite in future
-func storeTweet(tweet *Tweet) {
+func storeTweet(tweet *Tweet) error {
 	tweets = append(tweets, *tweet)
+	return nil
 }
 
 // RandomSample returns a random tweet from the dataset
-func RandomSample() Tweet {
+// TODO: replace with SQLite in future
+func RandomSample() (Tweet, error) {
 	sample := rand.IntN(len(tweets))
-	return tweets[sample]
+	return tweets[sample], nil
 }

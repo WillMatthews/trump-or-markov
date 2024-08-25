@@ -7,9 +7,14 @@ import (
 	"github.com/WillMatthews/trump-or-markov/internal/markov"
 )
 
-var chains map[int]markov.Chain
+const (
+	maxOrder = 4
+	minOrder = 1
+)
 
-func TrainMarkovChain(order int) {
+var chains map[int]*markov.Chain
+
+func TrainMarkovChain(order int) *markov.Chain {
 	chain := markov.NewMarkovChain(order)
 
 	trained := 0
@@ -18,28 +23,37 @@ func TrainMarkovChain(order int) {
 		trained++
 	}
 	fmt.Printf("Trained on %d tweets\n", trained)
-
-	chains[order] = *chain
-}
-
-func getChain(order int) markov.Chain {
-	if chains == nil {
-		chains = make(map[int]markov.Chain)
-	}
-	chain, ok := chains[order]
-	if !ok {
-		TrainMarkovChain(order)
-	}
-	chain = chains[order]
 	return chain
 }
 
-func RandomFakeSample(order int) Tweet {
-	base := RandomSample()
+func getChain(order int) (markov.Chain, error) {
+	if chains == nil {
+		chains = make(map[int]*markov.Chain)
+	}
+	chain, ok := chains[order]
+	if !ok {
+		chain = TrainMarkovChain(order)
+		chains[order] = chain
+	}
 
-	chain := getChain(order)
+	return *chain, nil
+}
 
-	base.Text = chain.GenerateRandom(order, 140)
+func RandomFakeSample(order int) (*Tweet, error) {
+	if order < minOrder || order > maxOrder {
+		return nil, fmt.Errorf("order must be between %d and %d", minOrder, maxOrder)
+	}
 
-	return base
+	baseTweet, err := RandomSample()
+	if err != nil {
+		return nil, err
+	}
+
+	chain, err := getChain(order)
+	if err != nil {
+		return nil, err
+	}
+
+	baseTweet.Text = chain.GenerateRandom(order, 140)
+	return &baseTweet, nil
 }

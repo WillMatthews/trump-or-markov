@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/WillMatthews/trump-or-markov/internal/config"
 	"github.com/WillMatthews/trump-or-markov/internal/trumptweets"
 	"github.com/gin-gonic/gin"
@@ -21,12 +23,33 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/realDTTweet", func(c *gin.Context) {
-		tweet := trumptweets.RandomSample()
+		tweet, err := trumptweets.RandomSample()
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		c.JSON(200, tweet)
 	})
 
 	r.GET("/fakeDTTweet", func(c *gin.Context) {
-		tweet := trumptweets.RandomFakeSample(2)
+		ord := 2
+		if ordQry, ok := c.GetQuery("order"); ok {
+			if parsed, err := strconv.Atoi(ordQry); err == nil {
+				ord = parsed
+			}
+		}
+
+		tweet, err := trumptweets.RandomFakeSample(ord)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		c.JSON(200, tweet)
 	})
 
