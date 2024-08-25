@@ -25,6 +25,11 @@ func main() {
 		c.JSON(200, tweet)
 	})
 
+	r.GET("/fakeDTTweet", func(c *gin.Context) {
+		tweet := trumptweets.RandomFakeSample(2)
+		c.JSON(200, tweet)
+	})
+
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",

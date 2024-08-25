@@ -24,12 +24,12 @@ func parseToClean(dirty *DirtyTweet) (*Tweet, error) {
 	}
 
 	return &Tweet{
-		ID:         dirty.ID,
-		Text:       dirty.Text,
-		Favourites: dirty.Favourites,
-		Retweets:   dirty.Retweets,
-		Date:       parsedDate,
-		Device:     dirty.Device,
+		ID:        dirty.ID,
+		Text:      dirty.Text,
+		Favorites: dirty.Favorites,
+		Retweets:  dirty.Retweets,
+		Date:      parsedDate,
+		Device:    dirty.Device,
 
 		IsRetweet: dirty.IsRetweet == "t",
 		IsDeleted: dirty.IsDeleted == "t",
