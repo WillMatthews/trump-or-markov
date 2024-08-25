@@ -5,6 +5,7 @@ import (
 
 	tt "github.com/WillMatthews/trump-or-markov/internal/trumptweets"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 func Trump(c *gin.Context) {
@@ -54,6 +55,8 @@ func createTweets(c *gin.Context, num int, f func() (*tt.Tweet, error)) {
 
 func check(c *gin.Context, err error) {
 	if err != nil {
+		log.Err(err).
+			Msg("Error retrieving tweet")
 		c.JSON(500, gin.H{
 			"error": err.Error(),
 		})

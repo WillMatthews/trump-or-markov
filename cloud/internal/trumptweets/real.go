@@ -8,6 +8,7 @@ import (
 
 	"github.com/WillMatthews/trump-or-markov/internal/config"
 	"github.com/bcicen/jstream"
+	"github.com/rs/zerolog/log"
 )
 
 // Hold in memory for now, but we will want a SQLite DB
@@ -45,14 +46,16 @@ func LoadTrumpTweets(cfg config.Dataset) {
 	jsonFile := cfg.Trump
 	f, err := os.Open(jsonFile)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).
+			Msg("Error opening file")
 	}
 	defer f.Close()
 
 	decoder := jstream.NewDecoder(f, 1)
 	err = parseStream(decoder)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).
+			Msg("Error parsing stream")
 	}
 }
 
@@ -65,7 +68,6 @@ func parseStream(decoder *jstream.Decoder) error {
 			numTweets++
 			_, err := parseTweet(value.(map[string]interface{}))
 			if err != nil {
-				// TODO log as error
 				return fmt.Errorf("Error parsing tweet: %w", err)
 			}
 
@@ -74,7 +76,8 @@ func parseStream(decoder *jstream.Decoder) error {
 		}
 	}
 
-	fmt.Printf("Loaded %d tweets\n", numTweets)
+	log.Info().Int("numTweets", numTweets).
+		Msg("Loaded tweets into memory")
 	if len(tweets) == 0 {
 		return fmt.Errorf("No tweets loaded")
 	}

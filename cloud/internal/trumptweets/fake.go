@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/WillMatthews/trump-or-markov/internal/markov"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -22,7 +23,11 @@ func TrainMarkovChain(order int) *markov.Chain {
 		chain.Train(strings.Fields(tweet.Text))
 		trained++
 	}
-	fmt.Printf("Trained on %d tweets\n", trained)
+	log.Info().
+		Int("order", order).
+		Int("trained", trained).
+		Msg("Trained markov chain")
+
 	return chain
 }
 
