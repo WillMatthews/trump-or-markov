@@ -38,16 +38,14 @@ func parseToClean(dirty *DirtyTweet) (*Tweet, error) {
 }
 
 func parseTweet(encTweet map[string]interface{}) (*Tweet, error) {
-	decTweet, err := parseDirty(encTweet)
+	dirtyParsed, err := parseDirty(encTweet)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tweet: %w", err)
 	}
 
-	tweet, err := parseToClean(decTweet)
+	tweet, err := parseToClean(dirtyParsed)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tweet: %w", err)
 	}
-
-	storeTweet(tweet)
 	return tweet, nil
 }

@@ -12,7 +12,7 @@ import (
 var chains map[int]*markov.Chain
 
 func TrainMarkovChain(order int) *markov.Chain {
-	chain := markov.NewMarkovChain(order)
+	chain := markov.NewMarkovChain(order, &config.Markov)
 
 	trained := 0
 	for _, tweet := range tweets {

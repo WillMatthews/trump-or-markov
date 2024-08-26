@@ -31,11 +31,12 @@ func parseStream(decoder *jstream.Decoder) error {
 		switch value.(type) {
 		case map[string]interface{}:
 			numTweets++
-			_, err := parseTweet(value.(map[string]interface{}))
+			tweet, err := parseTweet(value.(map[string]interface{}))
 			if err != nil {
 				// TODO log as error
 				return fmt.Errorf("Error parsing tweet: %w", err)
 			}
+			storeTweet(tweet)
 
 		default:
 			return fmt.Errorf("Unexpected type: %T", value)
