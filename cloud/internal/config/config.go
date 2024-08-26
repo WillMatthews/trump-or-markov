@@ -20,10 +20,16 @@ type Server struct {
 }
 
 type Twitter struct {
-	MaxTweets int `yaml:"max_tweets"`
-	MaxOrder  int `yaml:"max_order"`
-	MaxLen    int `yaml:"max_len"`
-	MaxWords  int `yaml:"max_words"`
+	MaxTweets int    `yaml:"max_tweets"`
+	Markov    Markov `yaml:"markov"`
+}
+
+type Markov struct {
+	MaxOrder            int `yaml:"max_order"`
+	MaxGenerateAttempts int `yaml:"max_generate_attempts"`
+	MaxChars            int `yaml:"max_chars"`
+	MinWords            int `yaml:"min_words"`
+	MaxWords            int `yaml:"max_words"` // TODO impl for general case
 }
 
 type Dataset struct {
@@ -36,11 +42,11 @@ type Database struct {
 }
 
 type Config struct {
-	App      App      `yaml:"app"`
-	Server   Server   `yaml:"server"`
-	Dataset  Dataset  `yaml:"dataset"`
-	Database Database `yaml:"database"`
-	Twitter  Twitter  `yaml:"twitter"`
+	App     App     `yaml:"app"`
+	Server  Server  `yaml:"server"`
+	Dataset Dataset `yaml:"dataset"`
+	//Database Database `yaml:"database"`
+	Twitter Twitter `yaml:"twitter"`
 }
 
 func GetConfig() (*Config, string) {

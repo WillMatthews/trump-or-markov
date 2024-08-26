@@ -7,9 +7,12 @@ server:
 
 twitter:
   max_tweets: 1024
-  max_order: 4
-  max_length: 4096
-  max_words: 1024
+  markov:
+    max_order: 4
+    max_generate_attempts: 128
+    max_chars: 4096
+    min_words: 4
+    max_words: 1024
 
 dataset:
   trump: "../real-data/tweets_01-08-2021.json"

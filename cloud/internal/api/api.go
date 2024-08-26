@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/WillMatthews/trump-or-markov/internal/config"
@@ -16,7 +15,7 @@ var (
 )
 
 func Trump(c *gin.Context, config *config.Twitter) {
-	ord, err := parseOrd(c, config.MaxOrder)
+	ord, err := parseOrd(c, config.Markov.MaxOrder)
 	if err != nil {
 		sendError(c, err)
 		return
@@ -30,12 +29,12 @@ func Trump(c *gin.Context, config *config.Twitter) {
 
 	if makeFake, ok := c.GetQuery("fake"); ok {
 		if makeFake == "true" {
-			fake(c, ord, numTweets)
+			fake(c, ord, numTweets, config.Markov)
 			return
 		}
 	}
 
-	real(c, numTweets)
+	real(c, numTweets, &config.Markov)
 }
 
 func parseOrd(c *gin.Context, maxOrder int) (int, error) {
@@ -46,7 +45,6 @@ func parseOrd(c *gin.Context, maxOrder int) (int, error) {
 		}
 	}
 
-	fmt.Println(ord, maxOrder)
 	if ord > maxOrder {
 		return 0, ErrOrderTooHigh
 	}
@@ -67,14 +65,25 @@ func parseNumTweets(c *gin.Context, maxTweets int) (int, error) {
 	return numTweets, nil
 }
 
-func fake(c *gin.Context, ord int, num int) {
-	createTweets(c, num, func() (*tt.Tweet, error) {
-		return tt.RandomFakeSample(ord)
+func fake(c *gin.Context,
+	markovOrder int,
+	numTweets int,
+	config config.Markov,
+) {
+	createTweets(c, numTweets, func() (*tt.Tweet, error) {
+		return tt.RandomFakeSample(markovOrder, &config)
 	})
 }
 
-func real(c *gin.Context, num int) {
-	createTweets(c, num, tt.RandomSample)
+func real(c *gin.Context,
+	num int,
+	cfg *config.Markov,
+) {
+	gen := func() (*tt.Tweet, error) {
+		return tt.RandomRealSample(cfg)
+	}
+
+	createTweets(c, num, gen)
 }
 
 func createTweets(c *gin.Context, num int, tweetGen func() (*tt.Tweet, error)) {

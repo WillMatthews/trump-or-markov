@@ -4,42 +4,10 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"os"
-	"time"
 
 	"github.com/WillMatthews/trump-or-markov/internal/config"
 	"github.com/bcicen/jstream"
 )
-
-// Hold in memory for now, but we will want a SQLite DB
-var tweets []Tweet
-
-type Tweet struct {
-	ID        int64     `json:"id"`
-	Text      string    `json:"text"`
-	Favorites int       `json:"favorites"`
-	Retweets  int       `json:"retweets"`
-	Date      time.Time `json:"date"`
-	Device    string    `json:"device"`
-
-	IsRetweet bool `json:"isRetweet"`
-	IsDeleted bool `json:"isDeleted"`
-
-	IsFlagged bool `json:"isFlagged"`
-}
-
-type DirtyTweet struct {
-	ID        int64  `json:"id"`
-	Text      string `json:"text"`
-	Favorites int    `json:"favorites"`
-	Retweets  int    `json:"retweets"`
-	Date      string `json:"date"`
-	Device    string `json:"device"`
-
-	IsRetweet string `json:"isRetweet"`
-	IsDeleted string `json:"isDeleted"`
-
-	IsFlagged string `json:"isFlagged"`
-}
 
 func LoadTrumpTweets(cfg config.Dataset) {
 	jsonFile := cfg.Trump
@@ -87,12 +55,21 @@ func storeTweet(tweet *Tweet) error {
 	return nil
 }
 
-// RandomSample returns a random tweet from the dataset
-// TODO: replace with SQLite in future
-func RandomSample() (*Tweet, error) {
+// RandomRealSample returns a random tweet from the dataset
+func RandomRealSample(cfg *config.Markov) (*Tweet, error) {
+	filters := []TweetFilter{
+		MinWordsFilter(cfg.MinWords),
+	}
+
 	f := func() (*Tweet, error) {
+		// TODO: replace with SQLite in future
 		sample := rand.IntN(len(tweets))
 		return &tweets[sample], nil
 	}
-	return withNoEllipsis(f)
+
+	return randomSampleWithFilter(
+		ComposeFilters(filters...),
+		f,
+		cfg.MaxGenerateAttempts,
+	)
 }

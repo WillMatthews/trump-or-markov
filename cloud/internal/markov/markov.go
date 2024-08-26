@@ -90,29 +90,28 @@ func (c *Chain) makeKey(tokens tokenChain) state {
 	return GetState(nTokens[:end])
 }
 
+func incrementCount(freq stateTransitions, value token) error {
+	for i, f := range freq {
+		if f.Token == value {
+			freq[i].ProbMass++
+			return nil
+		}
+	}
+	return errors.New("value not found")
+}
+
+func (c *Chain) addEntry(key state, value token) {
+	if freq, ok := c.Chain[key]; !ok {
+		c.Chain[key] = append(c.Chain[key], nextState{Token: value, ProbMass: 1})
+	} else {
+		if err := incrementCount(freq, value); err != nil {
+			newVal := nextState{Token: value, ProbMass: 1}
+			c.Chain[key] = append(c.Chain[key], newVal)
+		}
+	}
+}
+
 func (c *Chain) Train(words []token) {
-	incrementCount := func(freq stateTransitions, value token) error {
-		for i, f := range freq {
-			if f.Token == value {
-				freq[i].ProbMass++
-				return nil
-			}
-		}
-		return errors.New("value not found")
-	}
-
-	addEntry := func(key state, value token) {
-		if freq, ok := c.Chain[key]; !ok {
-			c.Chain[key] = append(c.Chain[key], nextState{Token: value, ProbMass: 1})
-		} else {
-			if err := incrementCount(freq, value); err != nil {
-				newVal := nextState{Token: value, ProbMass: 1}
-				c.Chain[key] = append(c.Chain[key], newVal)
-			}
-		}
-	}
-
-	// Seeds!
 	c.seeds = append(c.seeds, words[0])
 	// TODO relace with range
 	for i := 1; i < c.order+1; i++ {
@@ -120,25 +119,23 @@ func (c *Chain) Train(words []token) {
 			break
 		}
 		key := c.makeKey(words[:i])
-		addEntry(key, words[i])
+		c.addEntry(key, words[i])
 	}
 
 	// TODO relace with range
 	for i := 0; i < len(words)-c.order; i++ {
 		key := c.makeKey(words[i : i+c.order])
 
-		addEntry(key, words[i+c.order])
+		c.addEntry(key, words[i+c.order])
 	}
 }
 
-func (c *Chain) GenerateRandom(order, length, minTokens int) string {
-	genTokens := withMinTokens(minTokens, func() tokenChain {
-		// MUST retry with new seed if failure
-		// otherwise a high probability of getting stuck
-		seedIdx := rand.IntN(len(c.seeds))
-		seed := c.seeds[seedIdx]
-		return c.Generate(seed, length)
-	})
+func (c *Chain) GenerateRandom(order, length int) string {
+	// MUST retry with new seed if failure
+	// otherwise a high probability of getting stuck
+	seedIdx := rand.IntN(len(c.seeds))
+	seed := c.seeds[seedIdx]
+	genTokens := c.Generate(seed, length)
 
 	var sb strings.Builder
 	for _, t := range genTokens {
@@ -185,14 +182,6 @@ func (c *Chain) decideStop(words tokenChain, stopWordLimit int) bool {
 	}
 
 	return words.Len() > stopWordLimit
-}
-
-func withMinTokens(min int, tweetGen func() tokenChain) tokenChain {
-	var words tokenChain
-	for len(words) < min {
-		words = tweetGen()
-	}
-	return words
 }
 
 func samplePossibles(possibles stateTransitions) *nextState {

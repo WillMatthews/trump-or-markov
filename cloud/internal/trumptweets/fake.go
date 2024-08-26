@@ -5,14 +5,11 @@ import (
 	"math/rand/v2"
 	"strings"
 
+	"github.com/WillMatthews/trump-or-markov/internal/config"
 	"github.com/WillMatthews/trump-or-markov/internal/markov"
 )
 
 const (
-	maxOrder  = 4
-	minOrder  = 1
-	minTokens = 3
-
 	doubleSpaceProb = 0.05
 )
 
@@ -31,7 +28,7 @@ func TrainMarkovChain(order int) *markov.Chain {
 	return chain
 }
 
-func getChain(order int) (markov.Chain, error) {
+func getChain(order int) (*markov.Chain, error) {
 	if chains == nil {
 		chains = make(map[int]*markov.Chain)
 	}
@@ -41,15 +38,33 @@ func getChain(order int) (markov.Chain, error) {
 		chains[order] = chain
 	}
 
-	return *chain, nil
+	return chain, nil
 }
 
-func RandomFakeSample(order int) (*Tweet, error) {
-	if order < minOrder || order > maxOrder {
-		return nil, fmt.Errorf("order must be between %d and %d", minOrder, maxOrder)
+func RandomFakeSample(
+	order int,
+	config *config.Markov,
+) (*Tweet, error) {
+	filters := []TweetFilter{
+		MinWordsFilter(config.MinWords),
+		NoEllipsisFilter(),
 	}
 
-	baseTweet, err := RandomSample()
+	generator := func() (*Tweet, error) {
+		return generateFake(order, config)
+	}
+
+	return randomSampleWithFilter(
+		ComposeFilters(filters...),
+		generator,
+		config.MaxGenerateAttempts,
+	)
+}
+
+func generateFake(order int,
+	cfg *config.Markov,
+) (*Tweet, error) {
+	baseTweet, err := RandomRealSample(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +74,7 @@ func RandomFakeSample(order int) (*Tweet, error) {
 		return nil, err
 	}
 
-	generated := chain.GenerateRandom(order, 140, minTokens)
+	generated := chain.GenerateRandom(order, cfg.MaxChars)
 	baseTweet.Text = randomSpaceInjection(generated)
 
 	baseTweet.IsRetweet = strings.Contains(baseTweet.Text, "RT")
@@ -74,22 +89,4 @@ func randomSpaceInjection(text string) string {
 		}
 	}
 	return strings.Join(words, " ")
-}
-
-// withNoEllipsis returns a tweet that does not contain an ellipsis
-// In the training data, ellipsis are used to indicate that the tweet was cut off,
-// this can happen if the tweet is too long, is a twitlonger link, or if the tweet
-// is a retweet.
-func withNoEllipsis(tweetGen func() (*Tweet, error)) (*Tweet, error) {
-	var sampled *Tweet
-	var err error
-	for sampled == nil || strings.Contains(sampled.Text, "…") ||
-		strings.Contains(sampled.Text, "...") {
-
-		sampled, err = tweetGen()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return sampled, err
 }
