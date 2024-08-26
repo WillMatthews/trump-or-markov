@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	doubleSpaceProb      = 0.05
 	haltOnStopProbabilty = 0.1
 )
 
@@ -16,49 +15,66 @@ var (
 )
 
 type Chain struct {
-	chain map[string][]string
-	seeds []string
+	chain map[key][]Token
+	seeds []Token
 	order int
 
 	stopOnStopProbabilty float64
 }
 
+type key string
+
+func NewKey(words []Token) key {
+	if len(words) == 0 {
+		panic("NewKey called with no words")
+	}
+
+	keywords := words[0].String()
+	if len(words) == 1 {
+		return key(keywords)
+	}
+
+	for _, word := range words[1:] {
+		keywords += " " + word.String()
+	}
+	return key(keywords)
+}
+
+func (k key) String() string {
+	return string(k)
+}
+
 func NewMarkovChain(order int) *Chain {
 	return &Chain{
-		chain:                make(map[string][]string),
+		chain:                make(map[key][]Token),
 		order:                order,
 		stopOnStopProbabilty: haltOnStopProbabilty,
 	}
 }
 
-func (c *Chain) makeKey(words wordChain) string {
-	if len(words) == 0 {
+func (c *Chain) makeKey(tokens tokenChain) key {
+	if len(tokens) == 0 {
 		panic("makeKey called with no words")
 	}
 
 	// making words lowercase can help with the chain
 	// there are more possible paths it can take
-	lWords := make([]string, len(words))
-	for i, word := range words {
-		lWords[i] = strings.ToLower(word)
+	nTokens := make([]Token, len(tokens))
+	for i, t := range tokens {
+		nTokens[i] = t.Lower()
 	}
 
-	key := lWords[0]
-	if len(lWords) == 1 {
-		return key
+	end := len(nTokens) - c.order
+	if end <= 0 {
+		return NewKey(nTokens)
 	}
-
-	end := min(c.order, len(lWords))
-	for _, word := range lWords[1:end] {
-		key += " " + word
-	}
-	return key
+	return NewKey(nTokens[:end])
 }
 
-func (c *Chain) Train(words []string) {
-	addEntry := func(key string, value string) {
+func (c *Chain) Train(words []Token) {
+	addEntry := func(key key, value Token) {
 		if _, ok := c.chain[key]; !ok {
-			c.chain[key] = make([]string, 0)
+			c.chain[key] = make([]Token, 0)
 		}
 		c.chain[key] = append(c.chain[key], value)
 	}
@@ -85,12 +101,19 @@ func (c *Chain) Train(words []string) {
 func (c *Chain) GenerateRandom(order int, length int) string {
 	seedIdx := rand.IntN(len(c.seeds))
 	seed := c.seeds[seedIdx]
-	return c.Generate(seed, length)
+	genTokens := c.Generate(seed, length)
+
+	var sb strings.Builder
+	for _, t := range genTokens {
+		sb.WriteString(t.String())
+		sb.WriteString(" ")
+	}
+	return sb.String()
 }
 
-func (c *Chain) Generate(seed string, length int) string {
-	words := newWordChain()
-	words.add(seed)
+func (c *Chain) Generate(seed Token, length int) tokenChain {
+	words := NewTokenChain()
+	words.Add(seed)
 
 	for {
 		start := len(words) - c.order
@@ -106,16 +129,16 @@ func (c *Chain) Generate(seed string, length int) string {
 		}
 
 		next := posible[rand.IntN(len(posible))]
-		words.add(next)
+		words.Add(next)
 
 		if c.shouldIStop(words, length) {
 			break
 		}
 	}
-	return words.string()
+	return words
 }
 
-func (c *Chain) shouldIStop(words wordChain, stopWordLimit int) bool {
+func (c *Chain) shouldIStop(words tokenChain, stopWordLimit int) bool {
 	next := words[len(words)-1]
 	endChar := next[len(next)-1]
 	if slices.Contains(stopChars, endChar) {
@@ -124,39 +147,5 @@ func (c *Chain) shouldIStop(words wordChain, stopWordLimit int) bool {
 		}
 	}
 
-	return words.len() > stopWordLimit
-}
-
-type wordChain []string
-
-func (w wordChain) string() string {
-	sb := strings.Builder{}
-	for i, word := range w {
-		if i == 0 {
-			sb.WriteString(word)
-		} else {
-			if rand.Float64() < doubleSpaceProb {
-				sb.WriteString(" ")
-			}
-			sb.WriteString(" ")
-			sb.WriteString(word)
-		}
-	}
-	return sb.String()
-}
-
-func newWordChain() wordChain {
-	return make([]string, 0)
-}
-
-func (w wordChain) len() int {
-	total := 0
-	for _, word := range w {
-		total += len(word)
-	}
-	return total
-}
-
-func (w *wordChain) add(word string) {
-	*w = append(*w, word)
+	return words.Len() > stopWordLimit
 }
