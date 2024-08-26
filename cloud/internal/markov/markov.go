@@ -21,24 +21,45 @@ type Chain struct {
 type stateTransitions []nextState
 
 func (states stateTransitions) sample() *nextState {
-	mass := 0
+	if len(states) == 0 {
+		return nil
+	}
+
+	var mass uint16
 	for _, f := range states {
 		mass += f.ProbMass
 	}
 
-	r := rand.IntN(mass)
+	if mass == 0 {
+		// This should never happen
+		// TODO log an error here
+		return states.unifSample()
+	}
+
+	r := rand.IntN(int(mass))
 	for _, f := range states {
-		r -= f.ProbMass
+		r -= int(f.ProbMass)
 		if r <= 0 {
 			return &f
 		}
 	}
-	return nil
+
+	// This should never happen
+	// TODO log an error here
+	return states.unifSample()
+}
+
+func (states stateTransitions) unifSample() *nextState {
+	if len(states) == 0 {
+		return nil
+	}
+
+	return &states[rand.IntN(len(states))]
 }
 
 type nextState struct {
-	Token    token // not sure if this does me any good.
-	ProbMass int
+	TokenIdx tokenIndex
+	ProbMass uint16
 }
 
 type state string
@@ -64,11 +85,12 @@ func (c *Chain) makeKey(tokens tokenChain) state {
 		panic("makeKey called with no words")
 	}
 
-	// making words lowercase can help with the chain
-	// there are more possible paths it can take
-	nTokens := make([]token, len(tokens))
+	// making words lowercase can help with the chain in our case.
+	// this reduces the number of states in the chain and makes
+	// it a bit less sparse, which can help avoid overfitting.
+	var nTokens = make(tokenChain, len(tokens))
 	for i, t := range tokens {
-		nTokens[i] = t.Lower()
+		nTokens[i] = getOrCreateTokenIndex(t.Token())
 	}
 
 	end := len(nTokens) - c.order
@@ -80,7 +102,7 @@ func (c *Chain) makeKey(tokens tokenChain) state {
 
 func incrementCount(freq stateTransitions, value token) error {
 	for i, f := range freq {
-		if f.Token == value {
+		if f.TokenIdx.Token() == value {
 			freq[i].ProbMass++
 			return nil
 		}
@@ -89,33 +111,48 @@ func incrementCount(freq stateTransitions, value token) error {
 }
 
 func (c *Chain) addEntry(key state, value token) {
+	tIdx := getOrCreateTokenIndex(value)
+
+	// hack hack hack
+	// ensure lowercase token is stored (which is used in makeKey)
+	_ = getOrCreateTokenIndex(value.Lower())
+
 	if freq, ok := c.Chain[key]; !ok {
-		c.Chain[key] = append(c.Chain[key], nextState{Token: value, ProbMass: 1})
+		c.Chain[key] = append(
+			c.Chain[key],
+			nextState{TokenIdx: tIdx, ProbMass: 1},
+		)
 	} else {
 		if err := incrementCount(freq, value); err != nil {
-			newVal := nextState{Token: value, ProbMass: 1}
+			newVal := nextState{TokenIdx: tIdx, ProbMass: 1}
 			c.Chain[key] = append(c.Chain[key], newVal)
 		}
 	}
 }
 
 func (c *Chain) Train(words []token) {
+	if len(words) == 0 {
+		return
+	}
+
 	c.seeds = append(c.seeds, words[0])
-	// TODO relace with range
-	for i := 1; i < c.order+1; i++ {
-		if len(words) <= i {
-			break
+	for i := 1; i < len(words); i++ {
+		start := 0
+		if i > c.order {
+			start = i - c.order
 		}
-		key := c.makeKey(words[:i])
+		tChain := tokenSliceToChain(words[start:i])
+		key := c.makeKey(tChain)
 		c.addEntry(key, words[i])
 	}
+}
 
-	// TODO relace with range
-	for i := 0; i < len(words)-c.order; i++ {
-		key := c.makeKey(words[i : i+c.order])
-
-		c.addEntry(key, words[i+c.order])
+func tokenSliceToChain(words []token) tokenChain {
+	chain := make(tokenChain, len(words))
+	for i, w := range words {
+		chain[i] = getOrCreateTokenIndex(w)
 	}
+	return chain
 }
 
 func (c *Chain) GenerateRandom(order, length int) string {
@@ -127,7 +164,7 @@ func (c *Chain) GenerateRandom(order, length int) string {
 
 	var sb strings.Builder
 	for _, t := range genTokens {
-		sb.WriteString(t.String())
+		sb.WriteString(t.Token().String())
 		sb.WriteString(" ")
 	}
 	return sb.String()
@@ -149,8 +186,13 @@ func (c *Chain) Generate(seed token, length int) tokenChain {
 		if !ok {
 			break
 		}
+
+		// sample the possible next state
 		next := possible.sample()
-		words.Add(next.Token)
+		if next == nil {
+			break
+		}
+		words.Add(next.TokenIdx.Token())
 
 		if c.decideStop(words, length) {
 			break
@@ -163,7 +205,9 @@ func (c *Chain) decideStop(words tokenChain,
 	stopWordLimit int,
 ) bool {
 	next := words[len(words)-1]
-	endChar := string(next[len(next)-1])
+	nextStr := next.Token().String()
+	endChar := string(nextStr[len(nextStr)-1])
+
 	// hmm - do as tokens instead?
 	if slices.Contains(c.endPunctuation, endChar) {
 		if rand.Float64() < c.stopOnStopProbabilty {
@@ -174,26 +218,26 @@ func (c *Chain) decideStop(words tokenChain,
 	return words.Len() > stopWordLimit
 }
 
-func GetState(words []token) state {
+func GetState(words tokenChain) state {
 	if len(words) == 0 {
 		panic("NewKey called with no words")
 	}
 
 	pruned := pruneWordsToOrder(words, 2)
 
-	keywords := pruned[0].String()
+	keywords := pruned[0].Token().String()
 	if len(pruned) == 1 {
 		return state(keywords)
 	}
 
 	for _, word := range pruned[1:] {
-		keywords += " " + word.String()
+		keywords += " " + word.Token().String()
 	}
 
 	return state(keywords)
 }
 
-func pruneWordsToOrder(words []token, order int) []token {
+func pruneWordsToOrder(words tokenChain, order int) tokenChain {
 	if len(words) <= order {
 		return words
 	}

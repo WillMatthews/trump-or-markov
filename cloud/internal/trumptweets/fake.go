@@ -11,14 +11,13 @@ import (
 
 var chains map[int]*markov.Chain
 
-func TrainMarkovChain(order int, cfg *config.Markov) *markov.Chain {
+func MakeTweetsChain(order int, cfg *config.Markov) *markov.Chain {
 	chain := markov.NewMarkovChain(order, cfg)
 
 	trained := 0
 	for _, tweet := range tweets {
 		tokens := markov.Tokenise(tweet.Text)
 		chain.Train(tokens)
-		trained++
 	}
 	fmt.Printf("Trained on %d tweets\n", trained)
 	return chain
@@ -32,7 +31,7 @@ func getChain(order int,
 	}
 	chain, ok := chains[order]
 	if !ok {
-		chain = TrainMarkovChain(order, cfg)
+		chain = MakeTweetsChain(order, cfg)
 		chains[order] = chain
 	}
 
