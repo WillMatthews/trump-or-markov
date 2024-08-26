@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	maxOrder = 4
-	minOrder = 1
+	maxOrder  = 4
+	minOrder  = 1
+	minTokens = 3
 
 	doubleSpaceProb = 0.05
 )
@@ -48,7 +49,7 @@ func RandomFakeSample(order int) (*Tweet, error) {
 		return nil, fmt.Errorf("order must be between %d and %d", minOrder, maxOrder)
 	}
 
-	baseTweet, err := withNoEllipsis(RandomSample)
+	baseTweet, err := RandomSample()
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func RandomFakeSample(order int) (*Tweet, error) {
 		return nil, err
 	}
 
-	generated := chain.GenerateRandom(order, 140)
+	generated := chain.GenerateRandom(order, 140, minTokens)
 	baseTweet.Text = randomSpaceInjection(generated)
 
 	baseTweet.IsRetweet = strings.Contains(baseTweet.Text, "RT")
@@ -79,11 +80,13 @@ func randomSpaceInjection(text string) string {
 // In the training data, ellipsis are used to indicate that the tweet was cut off,
 // this can happen if the tweet is too long, is a twitlonger link, or if the tweet
 // is a retweet.
-func withNoEllipsis(f func() (*Tweet, error)) (*Tweet, error) {
+func withNoEllipsis(tweetGen func() (*Tweet, error)) (*Tweet, error) {
 	var sampled *Tweet
 	var err error
-	for sampled == nil || strings.Contains(sampled.Text, "…") {
-		sampled, err = f()
+	for sampled == nil || strings.Contains(sampled.Text, "…") ||
+		strings.Contains(sampled.Text, "...") {
+
+		sampled, err = tweetGen()
 		if err != nil {
 			return nil, err
 		}
