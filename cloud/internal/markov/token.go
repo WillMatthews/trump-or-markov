@@ -6,11 +6,6 @@ import (
 
 type token string
 
-func NewToken(s string) *token {
-	interned := dict.Intern(token(s))
-	return interned
-}
-
 func (t token) String() string {
 	return string(t)
 }
@@ -20,12 +15,12 @@ func (t *token) Lower() token {
 }
 
 // Keep this simple for now.
-func Tokenise(s string) []*token {
-	var tokens []*token
+func Tokenise(s string) []token {
+	var tokens []token
 
 	words := strings.Fields(s)
 	for _, word := range words {
-		tok := NewToken(word) // Interned
+		tok := token(word)
 		tokens = append(tokens, tok)
 	}
 	return tokens
@@ -35,7 +30,7 @@ func (t token) Len() int {
 	return len(t)
 }
 
-type tokenChain []*token
+type tokenChain []token
 
 func (w tokenChain) String() string {
 	var sb strings.Builder
@@ -51,7 +46,7 @@ func (w tokenChain) String() string {
 }
 
 func NewTokenChain() tokenChain {
-	return make([]*token, 0)
+	return make([]token, 0)
 }
 
 func (w tokenChain) Len() int {
@@ -62,6 +57,6 @@ func (w tokenChain) Len() int {
 	return total
 }
 
-func (w *tokenChain) Add(tok *token) {
+func (w *tokenChain) Add(tok token) {
 	*w = append(*w, tok)
 }

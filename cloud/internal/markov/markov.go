@@ -17,7 +17,7 @@ var (
 
 type Chain struct {
 	Chain map[state]stateTransitions
-	seeds []*token
+	seeds []token
 	order int
 
 	stopOnStopProbabilty float64
@@ -26,7 +26,7 @@ type Chain struct {
 type stateTransitions []nextState
 
 type nextState struct {
-	Token    *token // not sure if this does me any good.
+	Token    token // not sure if this does me any good.
 	ProbMass int
 }
 
@@ -90,8 +90,8 @@ func (c *Chain) makeKey(tokens tokenChain) state {
 	return GetState(nTokens[:end])
 }
 
-func (c *Chain) Train(words []*token) {
-	incrementCount := func(freq stateTransitions, value *token) error {
+func (c *Chain) Train(words []token) {
+	incrementCount := func(freq stateTransitions, value token) error {
 		for i, f := range freq {
 			if f.Token == value {
 				freq[i].ProbMass++
@@ -101,7 +101,7 @@ func (c *Chain) Train(words []*token) {
 		return errors.New("value not found")
 	}
 
-	addEntry := func(key state, value *token) {
+	addEntry := func(key state, value token) {
 		if freq, ok := c.Chain[key]; !ok {
 			c.Chain[key] = append(c.Chain[key], nextState{Token: value, ProbMass: 1})
 		} else {
@@ -148,7 +148,7 @@ func (c *Chain) GenerateRandom(order, length, minTokens int) string {
 	return sb.String()
 }
 
-func (c *Chain) Generate(seed *token, length int) tokenChain {
+func (c *Chain) Generate(seed token, length int) tokenChain {
 	words := NewTokenChain()
 	words.Add(seed)
 
@@ -175,7 +175,7 @@ func (c *Chain) Generate(seed *token, length int) tokenChain {
 }
 
 func (c *Chain) decideStop(words tokenChain, stopWordLimit int) bool {
-	next := *words[len(words)-1]
+	next := words[len(words)-1]
 	endChar := next[len(next)-1]
 	// hmm - do as tokens instead?
 	if slices.Contains(stopChars, endChar) {
