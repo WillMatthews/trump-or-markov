@@ -6,14 +6,16 @@ Inference costs nothing (other than holding maps in memory, which I admit is ext
 
 I did a crude memory usage measurement. I think I can do better than this.
 
-| Object       | Memory in MB |
-|--------------|--------------|
-| Binary       | 9.9          |
-| Tweets Alone | 33.1         |
-| Ord 1 chain  | 2            |
-| Ord 2 chain  | 180          |
-| Ord 3 chain  | 110          |
-| Ord 4 chain  | 255          |
+| Object       | Memory in MB | Memory in MB (hash key) |
+|--------------|--------------|-------------------------|
+| Binary       | 9.9          | 9.9                     |
+| Tweets Alone | 33.1         | 33.1                    |
+| Ord 1 chain  | 2            | 58                      |
+| Ord 2 chain  | 180          | 80                      |
+| Ord 3 chain  | 110          | 93                      |
+| Ord 4 chain  | 255          | 171                     |
+
+I probably shouldn't hash the strings before storing in map. The map should just do that for me efficiently.
 
 Potential strategies for reducing memory usage:
 - Use pointers liberally and point at a dictionary of words

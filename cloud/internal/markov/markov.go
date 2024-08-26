@@ -1,6 +1,7 @@
 package markov
 
 import (
+	"hash/fnv"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -22,7 +23,13 @@ type Chain struct {
 	stopOnStopProbabilty float64
 }
 
-type key string
+type key uint32
+
+func hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
+}
 
 func NewKey(words []Token) key {
 	if len(words) == 0 {
@@ -31,13 +38,14 @@ func NewKey(words []Token) key {
 
 	keywords := words[0].String()
 	if len(words) == 1 {
-		return key(keywords)
+		return key(hash(keywords))
 	}
 
 	for _, word := range words[1:] {
 		keywords += " " + word.String()
 	}
-	return key(keywords)
+
+	return key(hash(keywords))
 }
 
 func (k key) String() string {
