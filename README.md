@@ -54,7 +54,9 @@ From there, you can access the API at `localhost:1776`, it has two endpoints:
 - `/v1/health` - returns a ping response to check the service is up
 
 `/v1/trump` has the following query parameters:
-- `fake` - if set to `true`, returns generated text. If set to `false`, returns real text. Default is `false`.
+- `fake` - if set to `true`, returns generated text. If set to `false`, returns real text.
+  - If this is not set, it will return a mix of real and generated tweets.
+    The distribution is artificially balanced to prevent there being too many of one type.
 - `n` - the number of tweets to return. Default is 1.
 - `ord` - the order of the Markov chain. Default is 2 (bigrams) but can be 1-4. (higher is more likely to regurgitate real text but is more coherent)
 
