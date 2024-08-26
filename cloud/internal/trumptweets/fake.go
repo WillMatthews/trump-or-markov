@@ -40,6 +40,15 @@ func getChain(order int) (markov.Chain, error) {
 		chains[order] = chain
 	}
 
+	// j := 0
+	// for i, c := range *&chain.Chain {
+	// 	fmt.Println(i, c)
+	// 	j++
+	// 	if j > 20 {
+	// 		break
+	// 	}
+	// }
+
 	return *chain, nil
 }
 

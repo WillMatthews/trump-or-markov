@@ -1,7 +1,7 @@
 package markov
 
 import (
-	"hash/fnv"
+	"errors"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -15,20 +15,28 @@ var (
 	stopChars = []byte{'!', '?', '.'} //  …  (ellipsis is multi-byte, ignore for now)
 )
 
+type frequencies []frequency
+
+type frequency struct {
+	Token *Token
+	Count int
+}
+
 type Chain struct {
-	chain map[key][]Token
+	chain map[key]frequencies
 	seeds []Token
 	order int
 
 	stopOnStopProbabilty float64
 }
 
-type key uint32
+type key string
 
-func hash(s string) uint32 {
-	h := fnv.New32a()
-	h.Write([]byte(s))
-	return h.Sum32()
+func hash(s string) string {
+	return s
+	// h := fnv.New32a()
+	// h.Write([]byte(s))
+	// return h.Sum32()
 }
 
 func NewKey(words []Token) key {
@@ -54,7 +62,7 @@ func (k key) String() string {
 
 func NewMarkovChain(order int) *Chain {
 	return &Chain{
-		chain:                make(map[key][]Token),
+		chain:                make(map[key]frequencies),
 		order:                order,
 		stopOnStopProbabilty: haltOnStopProbabilty,
 	}
@@ -80,11 +88,25 @@ func (c *Chain) makeKey(tokens tokenChain) key {
 }
 
 func (c *Chain) Train(words []Token) {
-	addEntry := func(key key, value Token) {
-		if _, ok := c.chain[key]; !ok {
-			c.chain[key] = make([]Token, 0)
+	incrementCount := func(freq frequencies, value Token) error {
+		for i, f := range freq {
+			if *f.Token == value {
+				freq[i].Count++
+				return nil
+			}
 		}
-		c.chain[key] = append(c.chain[key], value)
+		return errors.New("value not found")
+	}
+
+	addEntry := func(key key, value Token) {
+		if freq, ok := c.chain[key]; !ok {
+			c.chain[key] = append(c.chain[key], frequency{Token: &value, Count: 1})
+		} else {
+			if err := incrementCount(freq, value); err != nil {
+				newVal := frequency{Token: &value, Count: 1}
+				c.chain[key] = append(c.chain[key], newVal)
+			}
+		}
 	}
 
 	// Seeds!
@@ -135,15 +157,30 @@ func (c *Chain) Generate(seed Token, length int) tokenChain {
 		if !ok {
 			break
 		}
-
-		next := posible[rand.IntN(len(posible))]
-		words.Add(next)
+		next := samplePossibles(posible)
+		words.Add(*next.Token)
 
 		if c.shouldIStop(words, length) {
 			break
 		}
 	}
 	return words
+}
+
+func samplePossibles(possibles frequencies) *frequency {
+	mass := 0
+	for _, f := range possibles {
+		mass += f.Count
+	}
+
+	r := rand.IntN(mass)
+	for _, f := range possibles {
+		r -= f.Count
+		if r <= 0 {
+			return &f
+		}
+	}
+	return nil
 }
 
 func (c *Chain) shouldIStop(words tokenChain, stopWordLimit int) bool {
