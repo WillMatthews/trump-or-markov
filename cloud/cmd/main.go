@@ -26,7 +26,7 @@ func main() {
 	})
 
 	r.GET("/v1/trump", func(c *gin.Context) {
-		api.Trump(c)
+		api.Trump(c, &cfg.Twitter)
 	})
 
 	// basic ping/pong health check

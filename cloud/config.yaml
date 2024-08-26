@@ -5,6 +5,12 @@ server:
   host: "127.0.0.1"
   port: 8080
 
+twitter:
+  max_tweets: 1024
+  max_order: 4
+  max_length: 4096
+  max_words: 1024
+
 dataset:
   trump: "../real-data/tweets_01-08-2021.json"
   mobydick: "../real-data/whale.txt"

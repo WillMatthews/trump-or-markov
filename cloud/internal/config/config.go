@@ -11,28 +11,36 @@ const (
 )
 
 type App struct {
-	Name string
+	Name string `yaml:"name"`
 }
 
 type Server struct {
-	host string
-	port int
+	host string `yaml:"host"`
+	port int    `yaml:"port"`
+}
+
+type Twitter struct {
+	MaxTweets int `yaml:"max_tweets"`
+	MaxOrder  int `yaml:"max_order"`
+	MaxLen    int `yaml:"max_len"`
+	MaxWords  int `yaml:"max_words"`
 }
 
 type Dataset struct {
-	Trump    string
-	MobyDick string
+	Trump    string `yaml:"trump"`
+	MobyDick string `yaml:"mobydick"`
 }
 
 type Database struct {
-	Sqlite string
+	Sqlite string `yaml:"sqlite"`
 }
 
 type Config struct {
-	App      App
-	Server   Server
-	Dataset  Dataset
-	Database Database
+	App      App      `yaml:"app"`
+	Server   Server   `yaml:"server"`
+	Dataset  Dataset  `yaml:"dataset"`
+	Database Database `yaml:"database"`
+	Twitter  Twitter  `yaml:"twitter"`
 }
 
 func GetConfig() (*Config, string) {

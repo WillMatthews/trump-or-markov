@@ -1,25 +1,31 @@
 package api
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
+	"github.com/WillMatthews/trump-or-markov/internal/config"
 	tt "github.com/WillMatthews/trump-or-markov/internal/trumptweets"
 	"github.com/gin-gonic/gin"
 )
 
-func Trump(c *gin.Context) {
-	ord := 2
-	if ordQry, ok := c.GetQuery("ord"); ok {
-		if parsed, err := strconv.Atoi(ordQry); err == nil {
-			ord = parsed
-		}
+var (
+	ErrOrderTooHigh = errors.New("requested markov order is too high")
+	ErrNumTweets    = errors.New("requested number of tweets is invalid or too high")
+)
+
+func Trump(c *gin.Context, config *config.Twitter) {
+	ord, err := parseOrd(c, config.MaxOrder)
+	if err != nil {
+		sendError(c, err)
+		return
 	}
 
-	numTweets := 1
-	if num, ok := c.GetQuery("n"); ok {
-		if parsed, err := strconv.Atoi(num); err == nil {
-			numTweets = parsed
-		}
+	numTweets, err := parseNumTweets(c, config.MaxTweets)
+	if err != nil {
+		sendError(c, err)
+		return
 	}
 
 	if makeFake, ok := c.GetQuery("fake"); ok {
@@ -30,6 +36,35 @@ func Trump(c *gin.Context) {
 	}
 
 	real(c, numTweets)
+}
+
+func parseOrd(c *gin.Context, maxOrder int) (int, error) {
+	ord := 2
+	if ordQry, ok := c.GetQuery("ord"); ok {
+		if parsed, err := strconv.Atoi(ordQry); err == nil {
+			ord = parsed
+		}
+	}
+
+	fmt.Println(ord, maxOrder)
+	if ord > maxOrder {
+		return 0, ErrOrderTooHigh
+	}
+	return ord, nil
+}
+
+func parseNumTweets(c *gin.Context, maxTweets int) (int, error) {
+	numTweets := 1
+	if num, ok := c.GetQuery("n"); ok {
+		if parsed, err := strconv.Atoi(num); err == nil {
+			numTweets = parsed
+		}
+	}
+
+	if numTweets < 1 || numTweets > maxTweets {
+		return 0, ErrNumTweets
+	}
+	return numTweets, nil
 }
 
 func fake(c *gin.Context, ord int, num int) {
@@ -52,11 +87,14 @@ func createTweets(c *gin.Context, num int, tweetGen func() (*tt.Tweet, error)) {
 	c.JSON(200, tweets)
 }
 
+func sendError(c *gin.Context, err error) {
+	c.JSON(500, gin.H{
+		"error": err.Error(),
+	})
+}
+
 func check(c *gin.Context, err error) {
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
+		sendError(c, err)
 	}
 }
