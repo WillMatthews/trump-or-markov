@@ -4,32 +4,38 @@ import (
 	"strings"
 )
 
-type Token string
+type token string
 
-func (t Token) String() string {
+func NewToken(s string) *token {
+	interned := dict.Intern(token(s))
+	return interned
+}
+
+func (t token) String() string {
 	return string(t)
 }
 
-func (t Token) Lower() Token {
-	return Token(strings.ToLower(t.String()))
+func (t *token) Lower() token {
+	return token(strings.ToLower(t.String()))
 }
 
 // Keep this simple for now.
-func Tokenise(s string) []Token {
-	var tokens []Token
+func Tokenise(s string) []*token {
+	var tokens []*token
 
 	words := strings.Fields(s)
 	for _, word := range words {
-		tokens = append(tokens, Token(word))
+		tok := NewToken(word) // Interned
+		tokens = append(tokens, tok)
 	}
 	return tokens
 }
 
-func (t Token) Len() int {
+func (t token) Len() int {
 	return len(t)
 }
 
-type tokenChain []Token
+type tokenChain []*token
 
 func (w tokenChain) String() string {
 	var sb strings.Builder
@@ -45,17 +51,17 @@ func (w tokenChain) String() string {
 }
 
 func NewTokenChain() tokenChain {
-	return make([]Token, 0)
+	return make([]*token, 0)
 }
 
 func (w tokenChain) Len() int {
 	total := 0
 	for _, word := range w {
-		total += len(word)
+		total += word.Len()
 	}
 	return total
 }
 
-func (w *tokenChain) Add(tok Token) {
+func (w *tokenChain) Add(tok *token) {
 	*w = append(*w, tok)
 }

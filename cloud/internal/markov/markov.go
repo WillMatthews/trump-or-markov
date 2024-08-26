@@ -12,106 +12,109 @@ const (
 )
 
 var (
-	stopChars = []byte{'!', '?', '.'} //  …  (ellipsis is multi-byte, ignore for now)
+	stopChars = []byte{'!', '?', '.'} //  …  ellipsis is multi byte. All omitted for now.
 )
 
-type frequencies []frequency
-
-type frequency struct {
-	Token *Token
-	Count int
-}
-
 type Chain struct {
-	chain map[key]frequencies
-	seeds []Token
+	Chain map[state]stateTransitions
+	seeds []*token
 	order int
 
 	stopOnStopProbabilty float64
 }
 
-type key string
+type stateTransitions []nextState
 
-func hash(s string) string {
-	return s
-	// h := fnv.New32a()
-	// h.Write([]byte(s))
-	// return h.Sum32()
+type nextState struct {
+	Token    *token // not sure if this does me any good.
+	ProbMass int
 }
 
-func NewKey(words []Token) key {
+type state string
+
+func (k state) String() string {
+	return string(k)
+}
+
+func GetState(words []token) state {
 	if len(words) == 0 {
 		panic("NewKey called with no words")
 	}
 
-	keywords := words[0].String()
-	if len(words) == 1 {
-		return key(hash(keywords))
+	pruned := pruneWordsToOrder(words, 2)
+
+	keywords := pruned[0].String()
+	if len(pruned) == 1 {
+		return state(keywords)
 	}
 
-	for _, word := range words[1:] {
+	for _, word := range pruned[1:] {
 		keywords += " " + word.String()
 	}
 
-	return key(hash(keywords))
+	return state(keywords)
 }
 
-func (k key) String() string {
-	return string(k)
+func pruneWordsToOrder(words []token, order int) []token {
+	if len(words) <= order {
+		return words
+	}
+
+	return words[len(words)-order:]
 }
 
 func NewMarkovChain(order int) *Chain {
 	return &Chain{
-		chain:                make(map[key]frequencies),
+		Chain:                make(map[state]stateTransitions),
 		order:                order,
 		stopOnStopProbabilty: haltOnStopProbabilty,
 	}
 }
 
-func (c *Chain) makeKey(tokens tokenChain) key {
+func (c *Chain) makeKey(tokens tokenChain) state {
 	if len(tokens) == 0 {
 		panic("makeKey called with no words")
 	}
 
 	// making words lowercase can help with the chain
 	// there are more possible paths it can take
-	nTokens := make([]Token, len(tokens))
+	nTokens := make([]token, len(tokens))
 	for i, t := range tokens {
 		nTokens[i] = t.Lower()
 	}
 
 	end := len(nTokens) - c.order
 	if end <= 0 {
-		return NewKey(nTokens)
+		return GetState(nTokens)
 	}
-	return NewKey(nTokens[:end])
+	return GetState(nTokens[:end])
 }
 
-func (c *Chain) Train(words []Token) {
-	incrementCount := func(freq frequencies, value Token) error {
+func (c *Chain) Train(words []*token) {
+	incrementCount := func(freq stateTransitions, value *token) error {
 		for i, f := range freq {
-			if *f.Token == value {
-				freq[i].Count++
+			if f.Token == value {
+				freq[i].ProbMass++
 				return nil
 			}
 		}
 		return errors.New("value not found")
 	}
 
-	addEntry := func(key key, value Token) {
-		if freq, ok := c.chain[key]; !ok {
-			c.chain[key] = append(c.chain[key], frequency{Token: &value, Count: 1})
+	addEntry := func(key state, value *token) {
+		if freq, ok := c.Chain[key]; !ok {
+			c.Chain[key] = append(c.Chain[key], nextState{Token: value, ProbMass: 1})
 		} else {
 			if err := incrementCount(freq, value); err != nil {
-				newVal := frequency{Token: &value, Count: 1}
-				c.chain[key] = append(c.chain[key], newVal)
+				newVal := nextState{Token: value, ProbMass: 1}
+				c.Chain[key] = append(c.Chain[key], newVal)
 			}
 		}
 	}
 
 	// Seeds!
 	c.seeds = append(c.seeds, words[0])
-	// TODO relace with range over int
+	// TODO relace with range
 	for i := 1; i < c.order+1; i++ {
 		if len(words) <= i {
 			break
@@ -120,7 +123,7 @@ func (c *Chain) Train(words []Token) {
 		addEntry(key, words[i])
 	}
 
-	// TODO relace with range over int
+	// TODO relace with range
 	for i := 0; i < len(words)-c.order; i++ {
 		key := c.makeKey(words[i : i+c.order])
 
@@ -128,10 +131,14 @@ func (c *Chain) Train(words []Token) {
 	}
 }
 
-func (c *Chain) GenerateRandom(order int, length int) string {
-	seedIdx := rand.IntN(len(c.seeds))
-	seed := c.seeds[seedIdx]
-	genTokens := c.Generate(seed, length)
+func (c *Chain) GenerateRandom(order, length, minTokens int) string {
+	genTokens := withMinTokens(minTokens, func() tokenChain {
+		// MUST retry with new seed if failure
+		// otherwise a high probability of getting stuck
+		seedIdx := rand.IntN(len(c.seeds))
+		seed := c.seeds[seedIdx]
+		return c.Generate(seed, length)
+	})
 
 	var sb strings.Builder
 	for _, t := range genTokens {
@@ -141,7 +148,7 @@ func (c *Chain) GenerateRandom(order int, length int) string {
 	return sb.String()
 }
 
-func (c *Chain) Generate(seed Token, length int) tokenChain {
+func (c *Chain) Generate(seed *token, length int) tokenChain {
 	words := NewTokenChain()
 	words.Add(seed)
 
@@ -153,39 +160,24 @@ func (c *Chain) Generate(seed Token, length int) tokenChain {
 		wordsForKey := words[start:]
 		key := c.makeKey(wordsForKey)
 
-		posible, ok := c.chain[key]
+		posible, ok := c.Chain[key]
 		if !ok {
 			break
 		}
 		next := samplePossibles(posible)
-		words.Add(*next.Token)
+		words.Add(next.Token)
 
-		if c.shouldIStop(words, length) {
+		if c.decideStop(words, length) {
 			break
 		}
 	}
 	return words
 }
 
-func samplePossibles(possibles frequencies) *frequency {
-	mass := 0
-	for _, f := range possibles {
-		mass += f.Count
-	}
-
-	r := rand.IntN(mass)
-	for _, f := range possibles {
-		r -= f.Count
-		if r <= 0 {
-			return &f
-		}
-	}
-	return nil
-}
-
-func (c *Chain) shouldIStop(words tokenChain, stopWordLimit int) bool {
-	next := words[len(words)-1]
+func (c *Chain) decideStop(words tokenChain, stopWordLimit int) bool {
+	next := *words[len(words)-1]
 	endChar := next[len(next)-1]
+	// hmm - do as tokens instead?
 	if slices.Contains(stopChars, endChar) {
 		if rand.Float64() < c.stopOnStopProbabilty {
 			return true
@@ -193,4 +185,28 @@ func (c *Chain) shouldIStop(words tokenChain, stopWordLimit int) bool {
 	}
 
 	return words.Len() > stopWordLimit
+}
+
+func withMinTokens(min int, tweetGen func() tokenChain) tokenChain {
+	var words tokenChain
+	for len(words) < min {
+		words = tweetGen()
+	}
+	return words
+}
+
+func samplePossibles(possibles stateTransitions) *nextState {
+	mass := 0
+	for _, f := range possibles {
+		mass += f.ProbMass
+	}
+
+	r := rand.IntN(mass)
+	for _, f := range possibles {
+		r -= f.ProbMass
+		if r <= 0 {
+			return &f
+		}
+	}
+	return nil
 }

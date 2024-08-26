@@ -42,10 +42,10 @@ func real(c *gin.Context, num int) {
 	createTweets(c, num, tt.RandomSample)
 }
 
-func createTweets(c *gin.Context, num int, f func() (*tt.Tweet, error)) {
+func createTweets(c *gin.Context, num int, tweetGen func() (*tt.Tweet, error)) {
 	var tweets []*tt.Tweet
 	for i := 0; i < num; i++ {
-		tweet, err := f()
+		tweet, err := tweetGen()
 		check(c, err)
 		tweets = append(tweets, tweet)
 	}
