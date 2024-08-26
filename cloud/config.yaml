@@ -3,7 +3,7 @@ app:
 
 server:
   host: "127.0.0.1"
-  port: 8080
+  port: 1776
 
 trump_twitter:
   max_tweets: 1024

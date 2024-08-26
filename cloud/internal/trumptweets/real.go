@@ -57,15 +57,15 @@ func storeTweet(tweet *Tweet) error {
 }
 
 // RandomRealSample returns a random tweet from the dataset
-func RandomRealSample(cfg *config.Markov) (*Tweet, error) {
+func RandomRealSample(cfg *config.Markov) (Tweet, error) {
 	filters := []TweetFilter{
 		MinWordsFilter(cfg.MinWords),
 	}
 
-	f := func() (*Tweet, error) {
+	f := func() (Tweet, error) {
 		// TODO: replace with SQLite in future
 		sample := rand.IntN(len(tweets))
-		return &tweets[sample], nil
+		return tweets[sample], nil
 	}
 
 	return randomSampleWithFilter(

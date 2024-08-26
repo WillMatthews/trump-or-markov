@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -15,8 +16,13 @@ type App struct {
 }
 
 type Server struct {
-	host string `yaml:"host"`
-	port int    `yaml:"port"`
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
+func (s Server) Address() string {
+	port := fmt.Sprintf("%d", s.Port)
+	return s.Host + ":" + port
 }
 
 type TrumpTwitter struct {

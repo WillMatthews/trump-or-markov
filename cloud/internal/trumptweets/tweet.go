@@ -37,18 +37,18 @@ type Tweet struct {
 }
 
 func randomSampleWithFilter(
-	filter func(*Tweet) bool,
-	generator func() (*Tweet, error),
+	filter TweetFilter,
+	generator func() (Tweet, error),
 	maxAttempts int,
-) (*Tweet, error) {
+) (Tweet, error) {
 	for i := 0; i < maxAttempts; i++ {
 		tweet, err := generator()
 		if err != nil {
-			return nil, err
+			return Tweet{}, err
 		}
 		if filter(tweet) {
 			return tweet, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find suitable tweet after %d attempts", maxAttempts)
+	return Tweet{}, fmt.Errorf("could not find suitable tweet after %d attempts", maxAttempts)
 }

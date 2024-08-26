@@ -42,13 +42,13 @@ func getChain(order int,
 func RandomFakeSample(
 	order int,
 	config *config.TrumpTwitter,
-) (*Tweet, error) {
+) (Tweet, error) {
 	filters := []TweetFilter{
 		MinWordsFilter(config.Markov.MinWords),
 		NoEllipsisFilter(),
 	}
 
-	generator := func() (*Tweet, error) {
+	generator := func() (Tweet, error) {
 		return generateFake(order, config)
 	}
 
@@ -61,15 +61,15 @@ func RandomFakeSample(
 
 func generateFake(order int,
 	cfg *config.TrumpTwitter,
-) (*Tweet, error) {
+) (Tweet, error) {
 	baseTweet, err := RandomRealSample(&cfg.Markov)
 	if err != nil {
-		return nil, err
+		return Tweet{}, err
 	}
 
 	chain, err := getChain(order, &cfg.Markov)
 	if err != nil {
-		return nil, err
+		return Tweet{}, err
 	}
 
 	generated := chain.GenerateRandom(order, cfg.Markov.MaxChars)

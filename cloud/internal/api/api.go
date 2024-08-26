@@ -14,30 +14,42 @@ var (
 	ErrNumTweets    = errors.New("requested number of tweets is invalid or too high")
 )
 
-func Trump(c *gin.Context, config *config.TrumpTwitter) {
-	ord, err := parseOrd(c, config.Markov.MaxOrder)
+type TrumpAPI struct {
+	config *config.TrumpTwitter
+}
+
+func NewTrumpAPI(config *config.TrumpTwitter) *TrumpAPI {
+	return &TrumpAPI{
+		config: config,
+	}
+}
+
+func (api *TrumpAPI) HandleTrump(c *gin.Context) {
+	ord, err := api.parseOrd(c)
 	if err != nil {
-		sendError(c, err)
+		api.sendError(c, err)
 		return
 	}
 
-	numTweets, err := parseNumTweets(c, config.MaxTweets)
+	numTweets, err := api.parseNumTweets(c)
 	if err != nil {
-		sendError(c, err)
+		api.sendError(c, err)
 		return
 	}
 
 	if makeFake, ok := c.GetQuery("fake"); ok {
 		if makeFake == "true" {
-			fake(c, ord, numTweets, config)
+			api.fake(c, ord, numTweets)
 			return
 		}
+		api.real(c, numTweets)
+		return
 	}
 
-	real(c, numTweets, &config.Markov)
+	api.both(c, ord, numTweets)
 }
 
-func parseOrd(c *gin.Context, maxOrder int) (int, error) {
+func (api *TrumpAPI) parseOrd(c *gin.Context) (int, error) {
 	ord := 2
 	if ordQry, ok := c.GetQuery("ord"); ok {
 		if parsed, err := strconv.Atoi(ordQry); err == nil {
@@ -45,13 +57,13 @@ func parseOrd(c *gin.Context, maxOrder int) (int, error) {
 		}
 	}
 
-	if ord > maxOrder {
+	if ord > api.config.Markov.MaxOrder {
 		return 0, ErrOrderTooHigh
 	}
 	return ord, nil
 }
 
-func parseNumTweets(c *gin.Context, maxTweets int) (int, error) {
+func (api *TrumpAPI) parseNumTweets(c *gin.Context) (int, error) {
 	numTweets := 1
 	if num, ok := c.GetQuery("n"); ok {
 		if parsed, err := strconv.Atoi(num); err == nil {
@@ -59,51 +71,53 @@ func parseNumTweets(c *gin.Context, maxTweets int) (int, error) {
 		}
 	}
 
-	if numTweets < 1 || numTweets > maxTweets {
+	if numTweets < 1 || numTweets > api.config.MaxTweets {
 		return 0, ErrNumTweets
 	}
 	return numTweets, nil
 }
 
-func fake(c *gin.Context,
-	markovOrder int,
-	numTweets int,
-	config *config.TrumpTwitter,
-) {
-	createTweets(c, numTweets, func() (*tt.Tweet, error) {
-		return tt.RandomFakeSample(markovOrder, config)
+func (api *TrumpAPI) fake(c *gin.Context, markovOrder, numTweets int) {
+	api.createTweets(c, numTweets, func() ([]tt.Tweet, error) {
+		tweet, err := tt.RandomFakeSample(markovOrder, api.config)
+		if err != nil {
+			return nil, err
+		}
+		return []tt.Tweet{tweet}, nil
 	})
 }
 
-func real(c *gin.Context,
-	num int,
-	cfg *config.Markov,
-) {
-	gen := func() (*tt.Tweet, error) {
-		return tt.RandomRealSample(cfg)
+func (api *TrumpAPI) real(c *gin.Context, num int) {
+	gen := func() ([]tt.Tweet, error) {
+		tweet, err := tt.RandomRealSample(&api.config.Markov)
+		if err != nil {
+			return nil, err
+		}
+		return []tt.Tweet{tweet}, nil
 	}
 
-	createTweets(c, num, gen)
+	api.createTweets(c, num, gen)
 }
 
-func createTweets(c *gin.Context, num int, tweetGen func() (*tt.Tweet, error)) {
-	var tweets []*tt.Tweet
+func (api *TrumpAPI) both(c *gin.Context, order, numTweets int) {
+	// Implementation for both real and fake tweets
+}
+
+func (api *TrumpAPI) createTweets(c *gin.Context, num int, tweetGen func() ([]tt.Tweet, error)) {
+	var tweets []tt.Tweet
 	for i := 0; i < num; i++ {
-		tweet, err := tweetGen()
-		check(c, err)
-		tweets = append(tweets, tweet)
+		genTweets, err := tweetGen()
+		if err != nil {
+			api.sendError(c, err)
+			return
+		}
+		tweets = append(tweets, genTweets...)
 	}
 	c.JSON(200, tweets)
 }
 
-func sendError(c *gin.Context, err error) {
+func (api *TrumpAPI) sendError(c *gin.Context, err error) {
 	c.JSON(500, gin.H{
 		"error": err.Error(),
 	})
-}
-
-func check(c *gin.Context, err error) {
-	if err != nil {
-		sendError(c, err)
-	}
 }

@@ -2,10 +2,10 @@ package trumptweets
 
 import "strings"
 
-type TweetFilter func(*Tweet) bool
+type TweetFilter func(Tweet) bool
 
 func ComposeFilters(filters ...TweetFilter) TweetFilter {
-	return func(t *Tweet) bool {
+	return func(t Tweet) bool {
 		for _, filter := range filters {
 			if !filter(t) {
 				return false
@@ -16,7 +16,7 @@ func ComposeFilters(filters ...TweetFilter) TweetFilter {
 }
 
 func MinWordsFilter(minWords int) TweetFilter {
-	return func(t *Tweet) bool {
+	return func(t Tweet) bool {
 		return len(strings.Fields(t.Text)) >= minWords
 	}
 }
@@ -26,7 +26,7 @@ func MinWordsFilter(minWords int) TweetFilter {
 // this can happen if the tweet is too long, is a twitlonger link, or if the tweet
 // is a retweet.
 func NoEllipsisFilter() TweetFilter {
-	return func(t *Tweet) bool {
+	return func(t Tweet) bool {
 		return !strings.Contains(t.Text, "…") && !strings.Contains(t.Text, "...")
 	}
 }
