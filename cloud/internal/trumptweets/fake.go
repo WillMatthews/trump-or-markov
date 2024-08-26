@@ -11,8 +11,8 @@ import (
 
 var chains map[int]*markov.Chain
 
-func TrainMarkovChain(order int) *markov.Chain {
-	chain := markov.NewMarkovChain(order, &config.Markov)
+func TrainMarkovChain(order int, cfg *config.Markov) *markov.Chain {
+	chain := markov.NewMarkovChain(order, cfg)
 
 	trained := 0
 	for _, tweet := range tweets {
@@ -24,13 +24,15 @@ func TrainMarkovChain(order int) *markov.Chain {
 	return chain
 }
 
-func getChain(order int) (*markov.Chain, error) {
+func getChain(order int,
+	cfg *config.Markov,
+) (*markov.Chain, error) {
 	if chains == nil {
 		chains = make(map[int]*markov.Chain)
 	}
 	chain, ok := chains[order]
 	if !ok {
-		chain = TrainMarkovChain(order)
+		chain = TrainMarkovChain(order, cfg)
 		chains[order] = chain
 	}
 
@@ -65,7 +67,7 @@ func generateFake(order int,
 		return nil, err
 	}
 
-	chain, err := getChain(order)
+	chain, err := getChain(order, &cfg.Markov)
 	if err != nil {
 		return nil, err
 	}
