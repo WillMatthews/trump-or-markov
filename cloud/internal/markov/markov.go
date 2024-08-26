@@ -5,14 +5,8 @@ import (
 	"math/rand/v2"
 	"slices"
 	"strings"
-)
 
-const (
-	haltOnStopProbabilty = 0.1
-)
-
-var (
-	stopChars = []byte{'!', '?', '.'} //  …  ellipsis is multi byte. All omitted for now.
+	"github.com/WillMatthews/trump-or-markov/internal/config"
 )
 
 type Chain struct {
@@ -20,10 +14,27 @@ type Chain struct {
 	seeds []token
 	order int
 
+	endPunctuation       []string
 	stopOnStopProbabilty float64
 }
 
 type stateTransitions []nextState
+
+func (states stateTransitions) sample() *nextState {
+	mass := 0
+	for _, f := range states {
+		mass += f.ProbMass
+	}
+
+	r := rand.IntN(mass)
+	for _, f := range states {
+		r -= f.ProbMass
+		if r <= 0 {
+			return &f
+		}
+	}
+	return nil
+}
 
 type nextState struct {
 	Token    token // not sure if this does me any good.
@@ -36,38 +47,15 @@ func (k state) String() string {
 	return string(k)
 }
 
-func GetState(words []token) state {
-	if len(words) == 0 {
-		panic("NewKey called with no words")
-	}
-
-	pruned := pruneWordsToOrder(words, 2)
-
-	keywords := pruned[0].String()
-	if len(pruned) == 1 {
-		return state(keywords)
-	}
-
-	for _, word := range pruned[1:] {
-		keywords += " " + word.String()
-	}
-
-	return state(keywords)
-}
-
-func pruneWordsToOrder(words []token, order int) []token {
-	if len(words) <= order {
-		return words
-	}
-
-	return words[len(words)-order:]
-}
-
-func NewMarkovChain(order int) *Chain {
+func NewMarkovChain(
+	order int,
+	config *config.Markov,
+) *Chain {
 	return &Chain{
 		Chain:                make(map[state]stateTransitions),
 		order:                order,
-		stopOnStopProbabilty: haltOnStopProbabilty,
+		stopOnStopProbabilty: config.EndPunctuationProb,
+		endPunctuation:       config.EndPunctuation,
 	}
 }
 
@@ -157,11 +145,11 @@ func (c *Chain) Generate(seed token, length int) tokenChain {
 		wordsForKey := words[start:]
 		key := c.makeKey(wordsForKey)
 
-		posible, ok := c.Chain[key]
+		possible, ok := c.Chain[key]
 		if !ok {
 			break
 		}
-		next := samplePossibles(posible)
+		next := possible.sample()
 		words.Add(next.Token)
 
 		if c.decideStop(words, length) {
@@ -171,11 +159,13 @@ func (c *Chain) Generate(seed token, length int) tokenChain {
 	return words
 }
 
-func (c *Chain) decideStop(words tokenChain, stopWordLimit int) bool {
+func (c *Chain) decideStop(words tokenChain,
+	stopWordLimit int,
+) bool {
 	next := words[len(words)-1]
-	endChar := next[len(next)-1]
+	endChar := string(next[len(next)-1])
 	// hmm - do as tokens instead?
-	if slices.Contains(stopChars, endChar) {
+	if slices.Contains(c.endPunctuation, endChar) {
 		if rand.Float64() < c.stopOnStopProbabilty {
 			return true
 		}
@@ -184,18 +174,29 @@ func (c *Chain) decideStop(words tokenChain, stopWordLimit int) bool {
 	return words.Len() > stopWordLimit
 }
 
-func samplePossibles(possibles stateTransitions) *nextState {
-	mass := 0
-	for _, f := range possibles {
-		mass += f.ProbMass
+func GetState(words []token) state {
+	if len(words) == 0 {
+		panic("NewKey called with no words")
 	}
 
-	r := rand.IntN(mass)
-	for _, f := range possibles {
-		r -= f.ProbMass
-		if r <= 0 {
-			return &f
-		}
+	pruned := pruneWordsToOrder(words, 2)
+
+	keywords := pruned[0].String()
+	if len(pruned) == 1 {
+		return state(keywords)
 	}
-	return nil
+
+	for _, word := range pruned[1:] {
+		keywords += " " + word.String()
+	}
+
+	return state(keywords)
+}
+
+func pruneWordsToOrder(words []token, order int) []token {
+	if len(words) <= order {
+		return words
+	}
+
+	return words[len(words)-order:]
 }

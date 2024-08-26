@@ -19,9 +19,11 @@ type Server struct {
 	port int    `yaml:"port"`
 }
 
-type Twitter struct {
+type TrumpTwitter struct {
 	MaxTweets int    `yaml:"max_tweets"`
 	Markov    Markov `yaml:"markov"`
+
+	DoubleSpaceProb float64 `yaml:"double_space_prob"`
 }
 
 type Markov struct {
@@ -30,6 +32,9 @@ type Markov struct {
 	MaxChars            int `yaml:"max_chars"`
 	MinWords            int `yaml:"min_words"`
 	MaxWords            int `yaml:"max_words"` // TODO impl for general case
+
+	EndPunctuation     []string `yaml:"end_punctuation"`
+	EndPunctuationProb float64  `yaml:"end_punctuation_prob"`
 }
 
 type Dataset struct {
@@ -46,7 +51,7 @@ type Config struct {
 	Server  Server  `yaml:"server"`
 	Dataset Dataset `yaml:"dataset"`
 	//Database Database `yaml:"database"`
-	Twitter Twitter `yaml:"twitter"`
+	TrumpTwitter TrumpTwitter `yaml:"trump_twitter"`
 }
 
 func GetConfig() (*Config, string) {

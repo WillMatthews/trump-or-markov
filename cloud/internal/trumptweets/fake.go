@@ -9,10 +9,6 @@ import (
 	"github.com/WillMatthews/trump-or-markov/internal/markov"
 )
 
-const (
-	doubleSpaceProb = 0.05
-)
-
 var chains map[int]*markov.Chain
 
 func TrainMarkovChain(order int) *markov.Chain {
@@ -43,10 +39,10 @@ func getChain(order int) (*markov.Chain, error) {
 
 func RandomFakeSample(
 	order int,
-	config *config.Markov,
+	config *config.TrumpTwitter,
 ) (*Tweet, error) {
 	filters := []TweetFilter{
-		MinWordsFilter(config.MinWords),
+		MinWordsFilter(config.Markov.MinWords),
 		NoEllipsisFilter(),
 	}
 
@@ -57,14 +53,14 @@ func RandomFakeSample(
 	return randomSampleWithFilter(
 		ComposeFilters(filters...),
 		generator,
-		config.MaxGenerateAttempts,
+		config.Markov.MaxGenerateAttempts,
 	)
 }
 
 func generateFake(order int,
-	cfg *config.Markov,
+	cfg *config.TrumpTwitter,
 ) (*Tweet, error) {
-	baseTweet, err := RandomRealSample(cfg)
+	baseTweet, err := RandomRealSample(&cfg.Markov)
 	if err != nil {
 		return nil, err
 	}
@@ -74,14 +70,16 @@ func generateFake(order int,
 		return nil, err
 	}
 
-	generated := chain.GenerateRandom(order, cfg.MaxChars)
-	baseTweet.Text = randomSpaceInjection(generated)
+	generated := chain.GenerateRandom(order, cfg.Markov.MaxChars)
+	baseTweet.Text = randomSpaceInjection(generated, cfg.DoubleSpaceProb)
 
 	baseTweet.IsRetweet = strings.Contains(baseTweet.Text, "RT")
 	return baseTweet, nil
 }
 
-func randomSpaceInjection(text string) string {
+func randomSpaceInjection(text string,
+	doubleSpaceProb float64,
+) string {
 	words := strings.Fields(text)
 	for i, _ := range words {
 		if rand.Float64() < doubleSpaceProb {

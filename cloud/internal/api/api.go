@@ -14,7 +14,7 @@ var (
 	ErrNumTweets    = errors.New("requested number of tweets is invalid or too high")
 )
 
-func Trump(c *gin.Context, config *config.Twitter) {
+func Trump(c *gin.Context, config *config.TrumpTwitter) {
 	ord, err := parseOrd(c, config.Markov.MaxOrder)
 	if err != nil {
 		sendError(c, err)
@@ -29,7 +29,7 @@ func Trump(c *gin.Context, config *config.Twitter) {
 
 	if makeFake, ok := c.GetQuery("fake"); ok {
 		if makeFake == "true" {
-			fake(c, ord, numTweets, config.Markov)
+			fake(c, ord, numTweets, config)
 			return
 		}
 	}
@@ -68,10 +68,10 @@ func parseNumTweets(c *gin.Context, maxTweets int) (int, error) {
 func fake(c *gin.Context,
 	markovOrder int,
 	numTweets int,
-	config config.Markov,
+	config *config.TrumpTwitter,
 ) {
 	createTweets(c, numTweets, func() (*tt.Tweet, error) {
-		return tt.RandomFakeSample(markovOrder, &config)
+		return tt.RandomFakeSample(markovOrder, config)
 	})
 }
 

@@ -5,14 +5,17 @@ server:
   host: "127.0.0.1"
   port: 8080
 
-twitter:
+trump_twitter:
   max_tweets: 1024
+  double_space_prob: 0.02
   markov:
     max_order: 4
     max_generate_attempts: 128
-    max_chars: 4096
+    max_chars: 140
     min_words: 4
     max_words: 1024
+    end_punctuation: [".", "!", "?"]
+    end_punctuation_stop_prob: 0.1
 
 dataset:
   trump: "../real-data/tweets_01-08-2021.json"
