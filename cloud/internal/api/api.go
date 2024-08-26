@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"math/rand/v2"
 	"strconv"
 
 	"github.com/WillMatthews/trump-or-markov/internal/config"
@@ -27,13 +28,13 @@ func NewTrumpAPI(config *config.TrumpTwitter) *TrumpAPI {
 func (api *TrumpAPI) HandleTrump(c *gin.Context) {
 	ord, err := api.parseOrd(c)
 	if err != nil {
-		api.sendError(c, err)
+		api.sendBadRequest(c, err)
 		return
 	}
 
 	numTweets, err := api.parseNumTweets(c)
 	if err != nil {
-		api.sendError(c, err)
+		api.sendBadRequest(c, err)
 		return
 	}
 
@@ -100,15 +101,47 @@ func (api *TrumpAPI) real(c *gin.Context, num int) {
 }
 
 func (api *TrumpAPI) both(c *gin.Context, order, numTweets int) {
-	// Implementation for both real and fake tweets
+
+	// bias changes during sampling to try to guarantee a
+	// 50/50 split within a single request - I want to avoid
+	// a situation where all tweets are fake or all real
+	bias := 0.5
+
+	gen := func() ([]tt.Tweet, error) {
+		coinFlip := rand.Float64() < bias
+		if coinFlip {
+			bias = bias - 0.1
+		} else {
+			bias = bias + 0.1
+		}
+
+		var tweet tt.Tweet
+		var err error
+
+		if coinFlip {
+			tweet, err = tt.RandomFakeSample(order, api.config)
+		} else {
+			tweet, err = tt.RandomRealSample(&api.config.Markov)
+		}
+		if err != nil {
+			return nil, err
+		}
+		return []tt.Tweet{tweet}, nil
+	}
+
+	api.createTweets(c, numTweets, gen)
 }
 
-func (api *TrumpAPI) createTweets(c *gin.Context, num int, tweetGen func() ([]tt.Tweet, error)) {
+func (api *TrumpAPI) createTweets(
+	c *gin.Context,
+	num int,
+	tweetGen func() ([]tt.Tweet, error),
+) {
 	var tweets []tt.Tweet
 	for i := 0; i < num; i++ {
 		genTweets, err := tweetGen()
 		if err != nil {
-			api.sendError(c, err)
+			api.sendInternalError(c, err)
 			return
 		}
 		tweets = append(tweets, genTweets...)
@@ -116,8 +149,20 @@ func (api *TrumpAPI) createTweets(c *gin.Context, num int, tweetGen func() ([]tt
 	c.JSON(200, tweets)
 }
 
-func (api *TrumpAPI) sendError(c *gin.Context, err error) {
+func (api *TrumpAPI) sendInternalError(
+	c *gin.Context,
+	err error,
+) {
 	c.JSON(500, gin.H{
+		"error": err.Error(),
+	})
+}
+
+func (api *TrumpAPI) sendBadRequest(
+	c *gin.Context,
+	err error,
+) {
+	c.JSON(400, gin.H{
 		"error": err.Error(),
 	})
 }

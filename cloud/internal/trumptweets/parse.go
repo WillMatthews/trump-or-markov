@@ -34,6 +34,7 @@ func parseToClean(dirty *DirtyTweet) (*Tweet, error) {
 		IsRetweet: dirty.IsRetweet == "t",
 		IsDeleted: dirty.IsDeleted == "t",
 		IsFlagged: dirty.IsFlagged == "t",
+		IsReal:    true,
 	}, nil
 }
 

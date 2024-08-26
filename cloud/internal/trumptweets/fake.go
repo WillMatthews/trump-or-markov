@@ -75,6 +75,7 @@ func generateFake(order int,
 	baseTweet.Text = randomSpaceInjection(generated, cfg.DoubleSpaceProb)
 
 	baseTweet.IsRetweet = strings.Contains(baseTweet.Text, "RT")
+	baseTweet.IsReal = false
 	return baseTweet, nil
 }
 

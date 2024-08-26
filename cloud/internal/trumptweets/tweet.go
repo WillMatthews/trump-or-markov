@@ -32,8 +32,9 @@ type Tweet struct {
 
 	IsRetweet bool `json:"isRetweet"`
 	IsDeleted bool `json:"isDeleted"`
-
 	IsFlagged bool `json:"isFlagged"`
+
+	IsReal bool `json:"isReal"`
 }
 
 func randomSampleWithFilter(
