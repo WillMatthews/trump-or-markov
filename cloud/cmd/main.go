@@ -1,23 +1,33 @@
 package main
 
 import (
+	"time"
+
 	"github.com/WillMatthews/trump-or-markov/internal/api"
 	"github.com/WillMatthews/trump-or-markov/internal/config"
 	tt "github.com/WillMatthews/trump-or-markov/internal/trumptweets"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	cfg, version := config.GetConfig()
+
+	corsConfig := cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+
+	cfg, _ := config.GetConfig()
 	tt.LoadTrumpTweets(cfg.Dataset)
 	r := gin.Default()
 
 	tapi := api.NewTrumpAPI(&cfg.TrumpTwitter)
 
-	r.Use(func(c *gin.Context) {
-		c.Header("X-Version", version)
-		c.Next()
-	})
+	r.Use(cors.New(corsConfig))
 
 	r.GET("/v1/trump", tapi.HandleTrump)
 
