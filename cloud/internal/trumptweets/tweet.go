@@ -18,7 +18,6 @@ type DirtyTweet struct {
 
 	IsRetweet string `json:"isRetweet"`
 	IsDeleted string `json:"isDeleted"`
-
 	IsFlagged string `json:"isFlagged"`
 }
 

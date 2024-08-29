@@ -1,5 +1,5 @@
 # Training Data
-*.json
+/real-data/*.json
 *.txt
 
 # Air
