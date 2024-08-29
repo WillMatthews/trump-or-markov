@@ -29,7 +29,7 @@ function TweetCard({ tweet }: { tweet: MaybeTweet }) {
       <p>{tweet.favourites} likes</p>
       <p>{tweet.retweets} retweets</p>
 
-      <p>Real or fake: {tweet.isReal ? "Real" : "Fake"}</p>
+      <p class="spoiler">Real or fake: {tweet.isReal ? "Real" : "Fake"}</p>
     </div>
   );
 }
